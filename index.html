@@ -125,6 +125,7 @@ body.tv .progress{display:block}
 <style>
 [hidden]{display:none!important}
 html{color-scheme:light}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .codehint{color:var(--muted);font-size:13.5px;margin:-6px 0 0;line-height:1.45}
 .binlist{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow:auto}
 .binrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
@@ -135,6 +136,11 @@ html{color-scheme:light}
 .foot{display:flex;justify-content:center;margin-top:28px}
 .linkbtn{background:none;border:0;color:var(--muted);font-weight:600;font-size:13.5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:6px}
 body.tv .foot{display:none}
+.dv{font-size:calc(var(--fs,1)*11px);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-top:4px;line-height:1.3}
+.node .dv{font-size:10.5px}
+.confirm{flex-direction:column;align-items:stretch}
+.confirm .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.confirm .in{flex:1;min-width:160px;background:var(--surface);color:var(--ink)}
 /* view switch */
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px;background:var(--bg)}
 .seg button{border:0;background:transparent;padding:6px 12px;border-radius:7px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--muted)}
@@ -210,7 +216,8 @@ body.tv .orgsec h3{display:none}
   <form class="dlg" id="form" novalidate>
     <h2 id="dlgTitle">Add person</h2>
     <div class="fld"><label for="fName">Name</label><input class="in" id="fName" maxlength="80" autocomplete="off"></div>
-    <div class="fld"><label for="fTitle">Position / title</label><input class="in" id="fTitle" maxlength="120" autocomplete="off"></div>
+    <div class="fld"><label for="fDiv">Division <small>optional</small></label><input class="in" id="fDiv" maxlength="80" autocomplete="off"></div>
+    <div class="fld"><label for="fTitle">Position / title <small>optional</small></label><input class="in" id="fTitle" maxlength="120" autocomplete="off"></div>
     <div class="fld"><span>Works for</span><div class="cos" id="fCos"></div></div>
     <div class="fld"><label for="fBoss">Reports to</label><select class="in" id="fBoss"></select></div>
     <div class="fld"><span>Photo or employee card</span>
@@ -221,7 +228,7 @@ body.tv .orgsec h3{display:none}
     <label class="opt" id="rmWrap" hidden><input type="checkbox" id="fRemove"> Remove the current image</label>
     <div class="fld"><label for="fSort">Sort order <small>optional, lower numbers show first</small></label><input class="in" id="fSort" type="number" step="1" style="max-width:140px"></div>
     <p class="err-line" id="fErr" role="alert"></p>
-    <div class="confirm" id="confirmDel" hidden>Remove this person? You can restore them for 30 days.<span style="flex:1"></span><button class="btn ghost" type="button" id="noDel">Keep</button><button class="btn danger" type="button" id="yesDel">Remove</button></div>
+    <div class="confirm" id="confirmDel" hidden><span>Removing someone needs the password. They can be restored for 30 days.</span><div class="row"><label for="delPw" class="sr">Password</label><input class="in" id="delPw" type="password" autocomplete="off" placeholder="Password"><button class="btn ghost" type="button" id="noDel">Cancel</button><button class="btn danger" type="button" id="yesDel">Remove</button></div></div>
     <div class="actions">
       <button class="btn quiet" type="button" id="delBtn" hidden>Remove person</button><span class="sp"></span>
       <button class="btn ghost" type="button" id="cancel">Cancel</button><button class="btn" type="submit" id="save">Save</button>
@@ -276,16 +283,16 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     list: async()=>demo.map(x=>({...x})),
     version: async()=>"demo",
     save: async a=>{
-      const row={id:a.p_id||("d"+Date.now()),name:a.p_name,title:a.p_title,companies:a.p_companies,image_is_card:a.p_image_is_card,sort:a.p_sort,reports_to:a.p_reports_to||null,deleted_at:null,
+      const row={id:a.p_id||("d"+Date.now()),name:a.p_name,title:a.p_title,companies:a.p_companies,image_is_card:a.p_image_is_card,sort:a.p_sort,reports_to:a.p_reports_to||null,division:a.p_division||"",deleted_at:null,
         image:a.p_keep_image?((demo.find(d=>d.id===a.p_id)||{}).image||null):a.p_image};
       demo = a.p_id ? demo.map(d=>d.id===a.p_id?row:d) : demo.concat(row); },
-    remove: async id=>{ demo=demo.map(d=>d.id===id?{...d,deleted_at:new Date().toISOString()}:d); },
+    remove: async (id,pw)=>{ if(pw!=="demo") throw new Error("wrong_password"); demo=demo.map(d=>d.id===id?{...d,deleted_at:new Date().toISOString()}:d); },
     restore: async id=>{ demo=demo.map(d=>d.id===id?{...d,deleted_at:null}:d); }
   } : {
-    list: ()=>rest("people?select=id,name,title,companies,image,image_is_card,sort,reports_to,deleted_at&order=sort.asc.nullslast,name.asc"),
+    list: ()=>rest("people?select=id,name,division,title,companies,image,image_is_card,sort,reports_to,deleted_at&order=sort.asc.nullslast,name.asc"),
     version: ()=>rest("rpc/board_version",{method:"POST",body:{}}),
     save: a=>rest("rpc/save_person",{method:"POST",body:a}),
-    remove: id=>rest("rpc/remove_person",{method:"POST",body:{p_id:id}}),
+    remove: (id,pw)=>rest("rpc/remove_person",{method:"POST",body:{p_id:id,p_password:pw}}),
     restore: id=>rest("rpc/restore_person",{method:"POST",body:{p_id:id}})
   };
 
@@ -320,6 +327,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     if(!full){
       const d=document.createElement("div"); d.className="info";
       d.append(Object.assign(document.createElement("div"),{className:"nm",textContent:p.name}));
+      if(p.division) d.append(Object.assign(document.createElement("div"),{className:"dv",textContent:p.division}));
       if(p.title) d.append(Object.assign(document.createElement("div"),{className:"tt",textContent:p.title}));
       const ch=document.createElement("div"); ch.className="chips";
       COMPANIES.filter(x=>(p.companies||[]).includes(x.name)).forEach(x=>{ const s=document.createElement("span"); s.className="chip"; s.textContent=x.short; s.style.background=x.color; ch.append(s); });
@@ -355,6 +363,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
       else av.append(Object.assign(document.createElement("span"),{className:"ini",textContent:initials(p.name)}));
       n.append(av);
       n.append(Object.assign(document.createElement("div"),{className:"nm",textContent:p.name}));
+      if(p.division) n.append(Object.assign(document.createElement("div"),{className:"dv",textContent:p.division}));
       if(p.title) n.append(Object.assign(document.createElement("div"),{className:"tt",textContent:p.title}));
       const ch=document.createElement("div"); ch.className="chips";
       COMPANIES.filter(x=>(p.companies||[]).includes(x.name)).forEach(x=>{ const s=document.createElement("span"); s.className="chip"; s.textContent=x.short; s.style.background=x.color; ch.append(s); });
@@ -479,7 +488,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
   function openForm(p){
     editing=p; newImage=null;
     $("dlgTitle").textContent=p?"Edit "+p.name:"Add person";
-    $("fName").value=p?p.name:""; $("fTitle").value=p?(p.title||""):"";
+    $("fName").value=p?p.name:""; $("fTitle").value=p?(p.title||""):""; $("fDiv").value=p?(p.division||""):"";
     $("fSort").value=p&&p.sort!=null?p.sort:""; $("fCard").checked=p?!!p.image_is_card:false; $("fRemove").checked=false;
     $("rmWrap").hidden=!(p&&imgSrc(p));
     $("fCos").querySelectorAll("input").forEach(i=>i.checked=p?(p.companies||[]).includes(i.value):(tab!=="All"&&i.value===tab));
@@ -521,6 +530,8 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
 
   function friendly(e){
     const m=String(e&&e.message||"");
+    if(/wrong_password/.test(m)) return "That password isn't right. Check with whoever manages the board.";
+    if(/division_too_long/.test(m)) return "Keep the division under 80 characters.";
     if(/name_required/.test(m)) return "Add the person's name.";
     if(/bad_image/.test(m)) return "That image couldn't be saved. Try a different JPG or PNG.";
     if(/self_report/.test(m)) return "Someone can't report to themselves. Pick a different person.";
@@ -537,18 +548,21 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     const keep = !newImage && !$("fRemove").checked;
     $("save").disabled=true; $("save").textContent=newImage?"Uploading…":"Saving…"; $("fErr").textContent="";
     try{
-      await api.save({ p_id:editing?editing.id:null, p_name:name, p_title:$("fTitle").value.trim(), p_companies:companies,
+      await api.save({ p_id:editing?editing.id:null, p_name:name, p_title:$("fTitle").value.trim(), p_division:$("fDiv").value.trim(), p_companies:companies,
         p_image: keep ? null : (newImage||null), p_keep_image: !!(editing && keep), p_image_is_card:$("fCard").checked,
         p_sort: sortRaw===""||isNaN(Number(sortRaw)) ? null : Math.round(Number(sortRaw)),
         p_reports_to: $("fBoss").value || null });
       $("dlg").close(); await refresh(true);
     }catch(e){ $("fErr").textContent=friendly(e); $("save").disabled=false; $("save").textContent="Save"; }
   });
-  $("delBtn").onclick=()=>{ $("confirmDel").hidden=false; };
+  $("delBtn").onclick=()=>{ $("confirmDel").hidden=false; $("delPw").value=""; $("delPw").focus(); };
+  $("delPw").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); $("yesDel").click(); } });
   $("noDel").onclick=()=>{ $("confirmDel").hidden=true; };
   $("yesDel").onclick=async()=>{
-    if(!editing) return; $("yesDel").disabled=true;
-    try{ await api.remove(editing.id); $("dlg").close(); await refresh(true); }
+    if(!editing) return;
+    const pw=$("delPw").value; if(!pw){ $("fErr").textContent="Enter the password to remove someone."; $("delPw").focus(); return; }
+    $("yesDel").disabled=true;
+    try{ await api.remove(editing.id, pw); $("dlg").close(); await refresh(true); }
     catch(e){ $("fErr").textContent=friendly(e); }
     $("yesDel").disabled=false;
   };
@@ -559,7 +573,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
       if(!force && loaded){ const v=await api.version(); if(v===lastVersion) return; lastVersion=v; }
       else { try{ lastVersion=await api.version(); }catch(e){} }
       const rows=await api.list();
-      const all=(rows||[]).map(r=>({ id:r.id, name:String(r.name||""), title:String(r.title||""), companies:Array.isArray(r.companies)?r.companies:[],
+      const all=(rows||[]).map(r=>({ id:r.id, name:String(r.name||""), division:String(r.division||""), title:String(r.title||""), companies:Array.isArray(r.companies)?r.companies:[],
         image:r.image||null, image_is_card:!!r.image_is_card, sort:typeof r.sort==="number"?r.sort:null, reports_to:r.reports_to||null, deleted_at:r.deleted_at||null })).filter(p=>p.name);
       people=all.filter(p=>!p.deleted_at); removed=all.filter(p=>p.deleted_at);
       $("binBtn").hidden=!removed.length; $("binBtn").textContent="Recently removed ("+removed.length+")";
