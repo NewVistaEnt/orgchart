@@ -1,0 +1,1396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NVE Office Calendar</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Companion to the NVE Team Board: same tokens and type. Edit view = month grid + upcoming list; TV view = Today / Next 7 days / This month. */
+:root{
+  --bg:#f2f4f0; --surface:#ffffff; --sunk:#e7ece6; --ink:#17201b; --muted:#59665f; --line:#d3dad3;
+  --accent:#2e6a3e; --accent-ink:#ffffff; --danger:#a3271b; --danger-soft:#fbe9e6;
+  --co-lead:#2a3631; --co-nv:#3d6b4a; --co-ge:#527d2c; --co-dl:#24786a; --co-bos:#8b5a2b;
+  --k-bday:#c4532d; --k-bday-soft:#fbeae3; --k-anniv:#9a7414; --k-out:#5d6c74; --k-hol:#2e6a3e; --k-event:#35609c; --k-ooo:#6b4fa0; --k-other:#7a6a55; --k-call:#0e7c86; --k-safety:#c25e00; --wx-snow:#2f6fb0; --wx-snow-soft:#e3eef9; --alert:#8a3b12; --alert-soft:#fdebd9;
+  --shadow:0 1px 2px rgba(20,35,25,.06),0 6px 20px rgba(20,35,25,.07);
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#101512; --surface:#1a211d; --sunk:#222b26; --ink:#edf2ee; --muted:#9caaa2; --line:#34403a;
+  --accent:#7cc690; --accent-ink:#0e1a12; --danger:#ff8f7f; --danger-soft:#3a1f1b;
+  --co-lead:#5d6f66; --co-nv:#4f8a60; --co-ge:#6a9a3a; --co-dl:#2f9583; --co-bos:#a86f37;
+  --k-bday:#f08a63; --k-bday-soft:#3a2219; --k-anniv:#d8b04a; --k-out:#9aaab2; --k-hol:#7cc690; --k-event:#7ea7e0; --k-ooo:#b39ae0; --k-other:#c4b49b; --k-call:#5cc8d0; --k-safety:#f0a040; --wx-snow:#8cc0f0; --wx-snow-soft:#17283a; --alert:#ffb48a; --alert-soft:#3a2416;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#101512; --surface:#1a211d; --sunk:#222b26; --ink:#edf2ee; --muted:#9caaa2; --line:#34403a;
+  --accent:#7cc690; --accent-ink:#0e1a12; --danger:#ff8f7f; --danger-soft:#3a1f1b;
+  --co-lead:#5d6f66; --co-nv:#4f8a60; --co-ge:#6a9a3a; --co-dl:#2f9583; --co-bos:#a86f37;
+  --k-bday:#f08a63; --k-bday-soft:#3a2219; --k-anniv:#d8b04a; --k-out:#9aaab2; --k-hol:#7cc690; --k-event:#7ea7e0; --k-ooo:#b39ae0; --k-other:#c4b49b; --k-call:#5cc8d0; --k-safety:#f0a040; --wx-snow:#8cc0f0; --wx-snow-soft:#17283a; --alert:#ffb48a; --alert-soft:#3a2416;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ic{width:1em;height:1em;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* Header (matches the board) */
+header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 16px 10px;max-width:1400px;margin:0 auto}
+.brand{flex:1;min-width:0}
+.brand h1{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:-.01em;margin:0}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.brand a{color:inherit}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:0 16px 12px;max-width:1400px;margin:0 auto;scrollbar-width:none}
+.tab{flex:none;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:transparent;padding:7px 12px;border-radius:999px;font-size:13.5px;font-weight:600;cursor:pointer}
+.tab .sw{width:9px;height:9px;border-radius:50%}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:9px 14px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.quiet{background:transparent;border-color:transparent;color:var(--danger);padding-inline:4px}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:var(--surface)}
+.btn.sm{padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.55;cursor:default}
+.note{max-width:1400px;margin:14px auto 0;padding:0 16px}
+.note div{padding:11px 14px;border-radius:10px;background:var(--sunk);font-size:14px;line-height:1.45}
+.note div.err{background:var(--danger-soft);color:var(--danger)}
+
+/* Edit view layout */
+main{max-width:1400px;margin:0 auto;padding:20px 16px 64px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.panel{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);min-width:0}
+.mhead{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.mhead h2{font-family:var(--display);font-size:20px;margin:0;flex:1}
+.iconbtn{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:10px;background:transparent;cursor:pointer;font-size:18px}
+.dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--line)}
+.dow div{padding:8px 10px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.cell{min-height:118px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px;display:flex;flex-direction:column;gap:3px;cursor:pointer;min-width:0;background:transparent;text-align:left;border-top:0;border-left:0}
+.cell:nth-child(7n){border-right:0}
+.cell.other{background:var(--bg)}
+.cell.other .dn{color:var(--muted);opacity:.6}
+.cell.weekend{background:color-mix(in srgb,var(--bg) 55%,var(--surface))}
+.cell:hover{box-shadow:inset 0 0 0 2px var(--line)}
+.dn{font-family:var(--display);font-weight:700;font-size:13px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex:none}
+.cell.today .dn{background:var(--accent);color:var(--accent-ink)}
+.chip{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;line-height:1.25;padding:3px 6px;border-radius:6px;background:var(--sunk);border:0;border-left:3px solid var(--kc);text-align:left;cursor:pointer;min-width:0;width:100%}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip .ic{color:var(--kc);font-size:12px}
+.chip.cont{opacity:.75}
+.more{font-size:12px;color:var(--muted);font-weight:600;padding:0 6px}
+
+.side{display:flex;flex-direction:column;gap:20px}
+.side .panel{padding:16px}
+.side h3{font-family:var(--display);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.agenda{display:flex;flex-direction:column;gap:14px}
+.aday b{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+.aday b small{color:var(--muted);font-weight:600;margin-left:4px}
+.row{display:flex;align-items:center;gap:10px;padding:6px 0;min-width:0;width:100%;background:none;border:0;text-align:left;cursor:pointer}
+.row .who{min-width:0;flex:1}
+.row .who div{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .who small{display:block;color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{width:34px;height:34px;border-radius:50%;background:var(--sunk);overflow:hidden;flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;color:var(--kc,var(--accent));font-size:13px;position:relative}
+.av img{width:100%;height:100%;object-fit:cover}
+.av.k{background:color-mix(in srgb,var(--kc) 16%,var(--surface));color:var(--kc)}
+.av.k .ic{font-size:16px}
+.badge{position:absolute;right:-6px;bottom:-5px;width:16px;height:16px;border-radius:50%;background:var(--kc);color:#fff;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface)}
+.badge .ic{font-size:9px;stroke-width:2.6}
+.av{overflow:visible}
+.av img{border-radius:50%}
+.av .ini{display:flex;align-items:center;justify-content:center;width:100%;height:100%;border-radius:50%;overflow:hidden}
+.quiet-line{color:var(--muted);font-size:14px}
+.spotadd{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.spotadd button{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:transparent;border-radius:999px;padding:6px 11px;font-weight:700;font-size:13px;cursor:pointer}
+.spotadd button .ic{color:var(--kc)}
+.spotlist{display:flex;flex-direction:column;gap:2px}
+.spotlist .row small b{font-weight:700;color:var(--kc)}
+.spotthumb{width:34px;height:34px;border-radius:8px;object-fit:cover;flex:none}
+.peoplepick{display:grid;grid-template-columns:1fr 1fr;gap:4px;max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px}
+.peoplepick label{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;font-size:14px;cursor:pointer}
+.peoplepick label:hover{background:var(--sunk)}
+.peoplepick input{accent-color:var(--accent);width:16px;height:16px}
+textarea.in{resize:vertical;min-height:84px;line-height:1.4}
+.drop{display:flex;gap:14px;align-items:center;border:1.5px dashed var(--line);border-radius:12px;padding:12px;cursor:pointer;background:transparent;text-align:left;width:100%}
+.drop.over{border-color:var(--accent);background:var(--sunk)}
+.thumb{width:96px;height:72px;border-radius:8px;background:var(--sunk) center/cover no-repeat;flex:none}
+.drop b{display:block}
+.drop small{color:var(--muted)}
+.tvlinks{display:flex;flex-direction:column;gap:6px}
+.tvlinks a{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--ink);text-decoration:none;padding:7px 10px;border:1px solid var(--line);border-radius:10px}
+.tvlinks a i{width:9px;height:9px;border-radius:50%}
+.tvlinks a span{margin-left:auto;color:var(--muted);font-weight:500;font-size:12.5px}
+.key{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px;color:var(--muted);padding:10px 16px;border-top:1px solid var(--line)}
+.key span{display:inline-flex;align-items:center;gap:5px}
+.key .ic{color:var(--kc)}
+.mlist{display:none}
+.mhead{flex-wrap:wrap}
+.navs{display:inline-flex;gap:8px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px;background:var(--bg)}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:7px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+button.dn{border:0;background:transparent;cursor:pointer;padding:0}
+button.dn:hover{background:var(--sunk)}
+.cell.today button.dn:hover{background:var(--accent)}
+/* week view */
+.wview{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.wcol{border-right:1px solid var(--line);min-height:460px;display:flex;flex-direction:column;min-width:0}
+.wcol:last-child{border-right:0}
+.wcol.weekend{background:color-mix(in srgb,var(--bg) 55%,var(--surface))}
+.whead{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer;text-align:left;width:100%}
+.whead small{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.whead b{font-family:var(--display);font-size:22px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin-left:-4px}
+.wcol.today .whead b{background:var(--accent);color:var(--accent-ink)}
+.whead:hover small{color:var(--ink)}
+.wbody{flex:1;display:flex;flex-direction:column;gap:2px;padding:8px 6px;cursor:pointer}
+.wbody .row{padding:6px 4px;border-radius:8px}
+.wbody .row:hover,.dview .row:hover{background:var(--sunk)}
+.wbody .row .av{width:28px;height:28px;font-size:11px}
+.wbody .row{align-items:flex-start}
+.wbody .row .who div{font-size:13px;white-space:normal;overflow-wrap:anywhere}
+.wbody .row .who small{font-size:12px;white-space:normal}
+.wempty{color:var(--muted);font-size:12.5px;padding:4px}
+/* day view */
+.dview{padding:20px 24px 28px;display:flex;flex-direction:column;gap:22px}
+.dview .dsec h3{display:flex;align-items:center;gap:8px;font-family:var(--display);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.dview .dsec h3 .ic{color:var(--kc);font-size:16px}
+.dview .row{padding:10px;border-radius:12px;gap:14px}
+.dview .row .av{width:48px;height:48px;font-size:16px}
+.dview .row .av.k .ic{font-size:22px}
+.dview .row .who div{font-size:16px}
+.dview .row .who small{font-size:14px;white-space:normal}
+.dview .row .tt{color:var(--muted);font-size:13px;font-weight:500;margin-left:6px}
+.dempty{padding:40px 16px;text-align:center;border:1.5px dashed var(--line);border-radius:14px;color:var(--muted)}
+.dempty b{display:block;font-family:var(--display);font-size:18px;color:var(--ink);margin-bottom:4px}
+.dfoot{display:flex;gap:8px;flex-wrap:wrap}
+.linkbtn{background:none;border:0;color:var(--muted);font-weight:600;font-size:13.5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:6px}
+
+/* Dialog */
+dialog{border:0;border-radius:16px;padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100% - 32px);background:var(--surface);color:var(--ink);box-shadow:0 24px 64px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,16,12,.55)}
+.dlg{padding:22px;display:flex;flex-direction:column;gap:14px}
+.dlg h2{font-family:var(--display);font-size:20px;margin:0}
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fld>label,.fld>span{font-size:13px;font-weight:700}
+.fld small{color:var(--muted);font-weight:500}
+.in{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+select.in{appearance:auto}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kindpick{display:flex;align-items:center;gap:10px}
+.kindpick .kic{width:40px;height:40px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--kc);background:color-mix(in srgb,var(--kc) 14%,var(--surface))}
+.kindpick .kic .ic{font-size:20px}
+.kindpick select{flex:1;min-width:0;font-weight:600}
+.cos{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cos label,.halfs label{display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:14px;font-weight:500}
+.cos label .sw{width:10px;height:10px;border-radius:50%;margin-left:auto}
+.cos input,.halfs input{accent-color:var(--accent);width:16px;height:16px}
+.halfs{display:flex;gap:6px;flex-wrap:wrap}
+.err-line{color:var(--danger);font-size:13.5px;min-height:1.2em;margin:0}
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.actions .sp{flex:1}
+.confirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border-radius:10px;background:var(--danger-soft);color:var(--danger);font-size:14px;font-weight:600}
+.hint{color:var(--muted);font-size:13px;margin:-6px 0 0;line-height:1.45}
+.binlist{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow:auto}
+.binrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
+.binrow .who{flex:1;min-width:0}
+.binrow .who span{display:block;color:var(--muted);font-size:13px}
+
+@media (max-width:980px){ main{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:700px){
+  .peoplepick{grid-template-columns:1fr}
+  .dow,.grid,.key{display:none}
+  .mlist{display:flex;flex-direction:column;gap:14px;padding:14px 16px}
+  .mhead h2{flex-basis:100%}
+  .wview{grid-template-columns:1fr}
+  .wcol{border-right:0;border-bottom:1px solid var(--line);min-height:0}
+  .whead{flex-direction:row;align-items:center;gap:10px;border-bottom:0;padding-bottom:4px}
+  .whead b{font-size:18px;width:30px;height:30px}
+  .wbody{padding-top:0}
+  .dview{padding:16px}
+  .brand p{display:none}
+  .two,.cos{grid-template-columns:1fr}
+}
+
+/* ---------------- TV view ---------------- */
+/* --u is the TV's size unit: 1% of screen height on landscape TVs, scaled from width on portrait ones */
+:root{--u:1vh}
+.tv{display:none}
+body.tvmode{overflow:hidden;cursor:none;height:100vh}
+body.tvmode header,body.tvmode main,body.tvmode .note div:not(.err){display:none}
+body.tvmode .tv{display:flex;flex-direction:column;height:100vh;padding:calc(3.6*var(--u)) 3vw calc(3*var(--u));gap:calc(2.6*var(--u))}
+.tvtop{display:flex;align-items:flex-end;gap:3vw}
+.tvtop .d{flex:1;min-width:0}
+.tvtop .d small{display:flex;align-items:center;gap:calc(1*var(--u));font-size:calc(2.1*var(--u));font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tvtop .d small i{width:calc(1.4*var(--u));height:calc(1.4*var(--u));border-radius:50%}
+.tvtop .d div{font-family:var(--display);font-weight:800;font-size:calc(6.4*var(--u));letter-spacing:-.02em;line-height:1.05;margin-top:calc(.6*var(--u))}
+.tvtop .clock{font-family:var(--display);font-weight:700;font-size:calc(6.4*var(--u));line-height:1.05;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.tvtop .clock span{font-size:calc(2.6*var(--u));color:var(--muted);margin-left:calc(.6*var(--u));letter-spacing:0}
+.tvgrid{flex:1;min-height:0;display:grid;grid-template-columns:1.15fr 1fr 1.1fr;grid-template-rows:minmax(0,1fr) calc(18*var(--u));gap:calc(2.2*var(--u)) 2vw}
+.tvtop .wxnow{display:flex;align-items:center;gap:calc(1.2*var(--u));font-family:var(--display);font-weight:700;font-size:calc(4.2*var(--u));line-height:1}
+.tvtop .wxnow .ic{font-size:calc(5*var(--u));stroke-width:1.8}
+.tvtop .wxnow small{display:block;font-family:var(--body);font-weight:600;font-size:calc(1.9*var(--u));color:var(--muted);margin-top:calc(.5*var(--u))}
+.tvalert{display:flex;align-items:center;gap:calc(1.4*var(--u));padding:calc(1.5*var(--u)) 1.6vw;border-radius:calc(1.4*var(--u));background:var(--alert-soft);color:var(--alert);font-weight:700;font-size:calc(2.6*var(--u))}
+.tvalert .ic{font-size:calc(3.2*var(--u));flex:none}
+.tvalert.winter{background:var(--wx-snow-soft);color:var(--wx-snow)}
+.tvalert span{color:var(--ink);font-weight:600;margin-left:calc(.6*var(--u))}
+/* weather strip */
+.tcol.wx{grid-column:1/3;padding:calc(2*var(--u)) 1.4vw;flex-direction:row;gap:.8vw}
+.wday{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(.7*var(--u));border-radius:calc(1.4*var(--u));padding:calc(1*var(--u)) .4vw;text-align:center}
+.wday b{font-size:calc(2.1*var(--u));font-weight:700}
+.wday .ic{font-size:calc(5.4*var(--u));stroke-width:1.6;color:var(--muted)}
+.wday .t{font-family:var(--display);font-weight:700;font-size:calc(2.6*var(--u));font-variant-numeric:tabular-nums}
+.wday .t span{color:var(--muted);font-weight:600}
+.wday small{font-size:calc(1.8*var(--u));color:var(--muted);font-weight:600;min-height:calc(2.2*var(--u))}
+.wday.snow{background:var(--wx-snow-soft)}
+.wday.snow .ic,.wday.snow small{color:var(--wx-snow)}
+.wday.rain .ic{color:var(--k-event)}
+.wday.sun .ic{color:var(--k-anniv)}
+.wday.today{box-shadow:inset 0 0 0 calc(.3*var(--u)) var(--line)}
+.wnone{align-self:center;color:var(--muted);font-size:calc(2.2*var(--u))}
+/* on call + QR */
+.tcol.corner{flex-direction:row;align-items:stretch;gap:1.4vw;padding:calc(2.2*var(--u)) 1.4vw}
+.call{flex:1;min-width:0;display:flex;flex-direction:column;gap:calc(1*var(--u));overflow:hidden;--kc:var(--k-call)}
+.crew{display:flex;flex-direction:column;gap:calc(.6*var(--u));min-height:0}
+.crew>small{font-size:calc(1.8*var(--u));color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crewp{font-family:var(--display);font-weight:700;font-size:calc(2.5*var(--u));line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.crew,.call>*{flex-shrink:0}
+.trow.cp{gap:calc(.8*var(--u))}
+.trow.cp .av{width:calc(4.2*var(--u));height:calc(4.2*var(--u));font-size:calc(1.6*var(--u))}
+.trow.cp .av .badge{display:none}
+.trow.cp b{font-size:calc(2*var(--u));font-weight:700;white-space:nowrap}
+.call h3{display:flex;align-items:center;gap:calc(1*var(--u));margin:0;font-family:var(--display);font-size:calc(2.3*var(--u));font-weight:700}
+.call h3 .ic{color:var(--k-call)}
+.call .trow .av{width:calc(5*var(--u));height:calc(5*var(--u));font-size:calc(1.9*var(--u))}
+.call .trow .who div{font-size:calc(2.2*var(--u))}
+.call .trow .who small{font-size:calc(1.8*var(--u))}
+.qr{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(.8*var(--u));text-align:center}
+.qrbox{width:calc(12.5*var(--u));height:calc(12.5*var(--u));background:#fff;border-radius:calc(1*var(--u));padding:calc(.8*var(--u))}
+.qrbox img,.qrbox canvas{width:100%!important;height:100%!important;display:block}
+.qr small{font-size:calc(1.6*var(--u));color:var(--muted);font-weight:600;line-height:1.25;max-width:calc(17*var(--u))}
+/* spotlight */
+.tcol.spot{padding:0;position:relative}
+.spothead{display:flex;align-items:center;justify-content:space-between;gap:calc(1*var(--u));padding:calc(3*var(--u)) 1.6vw 0;position:relative;z-index:2}
+.spothead h2{display:flex;align-items:center;gap:calc(1*var(--u));font-family:var(--display);font-size:calc(2*var(--u));letter-spacing:.12em;text-transform:uppercase;color:var(--kc,var(--muted));margin:0;font-weight:700}
+.sdots{display:flex;gap:calc(.7*var(--u))}
+.sdots b{width:calc(1*var(--u));height:calc(1*var(--u));border-radius:50%;background:var(--line)}
+.sdots b.on{background:var(--kc,var(--accent))}
+.slide{flex:1;min-height:0;display:flex;flex-direction:column;padding:calc(2.2*var(--u)) 1.6vw calc(3*var(--u));gap:calc(2*var(--u));overflow:hidden;animation:fade .7s ease}
+.sprog{position:absolute;left:0;bottom:0;height:calc(.5*var(--u));background:var(--kc,var(--accent));width:0;opacity:.6}
+.s-quote{font-family:var(--display);font-weight:700;font-size:calc(3.5*var(--u));line-height:1.22;letter-spacing:-.01em;text-wrap:balance;overflow-wrap:anywhere}
+.s-quote.long{font-size:calc(2.9*var(--u))}
+.s-quote.xlong{font-size:calc(2.5*var(--u))}
+.s-who.plain b{font-size:calc(2.4*var(--u))}
+.s-who.plain small{font-size:calc(1.9*var(--u))}
+.s-quote::before{content:"\201C"}
+.s-quote::after{content:"\201D"}
+.s-who{display:flex;align-items:center;gap:calc(1.6*var(--u));margin-top:auto}
+.s-who .av{width:calc(9*var(--u));height:calc(9*var(--u));font-size:calc(3*var(--u))}
+.s-who .av .badge{width:calc(3*var(--u));height:calc(3*var(--u));border-width:calc(.4*var(--u));right:calc(-.6*var(--u));bottom:calc(-.4*var(--u))}
+.s-who .av .badge .ic{font-size:calc(1.6*var(--u))}
+.s-who b{display:block;font-family:var(--display);font-size:calc(3*var(--u));line-height:1.1}
+.s-who small{display:block;color:var(--muted);font-size:calc(2.1*var(--u));margin-top:calc(.4*var(--u))}
+.s-eyebrow{font-size:calc(2.1*var(--u));font-weight:700;color:var(--muted)}
+.stars{display:flex;gap:calc(.5*var(--u));color:var(--k-anniv)}
+.stars .ic{font-size:calc(3.2*var(--u));fill:currentColor}
+.s-photo{position:absolute;inset:0;border-radius:inherit;overflow:hidden}
+.s-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.s-photo .cap{position:absolute;left:0;right:0;bottom:0;padding:calc(10*var(--u)) 1.6vw calc(3*var(--u));background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff}
+.s-photo .cap b{display:block;font-family:var(--display);font-size:calc(3.4*var(--u));line-height:1.15;text-wrap:balance}
+.s-photo .cap small{display:inline-block;margin-top:calc(1*var(--u));font-size:calc(1.7*var(--u));font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:calc(.4*var(--u)) calc(.8*var(--u));border-radius:calc(.6*var(--u));background:rgba(255,255,255,.18)}
+.tcol.spot.photo .spothead h2{color:#fff}
+.tcol.spot.photo .spothead{text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.tcol.spot.photo .sdots b{background:rgba(255,255,255,.45)}
+.tcol.spot.photo .sdots b.on{background:#fff}
+.s-tip{display:flex;flex-direction:column;justify-content:center;gap:calc(2.4*var(--u));flex:1}
+.s-tip .big{width:calc(11*var(--u));height:calc(11*var(--u));border-radius:calc(2*var(--u));display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--k-safety) 15%,var(--surface));color:var(--k-safety)}
+.s-tip .big .ic{font-size:calc(6.4*var(--u));stroke-width:1.8}
+.s-tip p{margin:0;font-family:var(--display);font-weight:700;font-size:calc(3.8*var(--u));line-height:1.2;text-wrap:balance}
+.s-hire{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:calc(1.6*var(--u));flex:1}
+.s-hire .bigav{width:calc(22*var(--u));height:calc(22*var(--u));border-radius:50%;overflow:hidden;background:var(--sunk);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:calc(8*var(--u));color:var(--k-anniv);box-shadow:0 0 0 calc(.8*var(--u)) var(--surface),0 0 0 calc(1.4*var(--u)) var(--k-anniv)}
+.s-hire .bigav img{width:100%;height:100%;object-fit:cover}
+.s-hire b{font-family:var(--display);font-size:calc(4.6*var(--u));line-height:1.05;letter-spacing:-.02em}
+.s-hire p{margin:0;font-size:calc(2.4*var(--u));color:var(--muted)}
+.s-hire .when{font-size:calc(2.2*var(--u));font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--k-anniv)}
+.s-month{display:flex;flex-direction:column;gap:calc(1.3*var(--u));flex:1;min-height:0;overflow:hidden}
+.s-empty{flex:1;display:flex;flex-direction:column;justify-content:center;gap:calc(1.2*var(--u));color:var(--muted);font-size:calc(2.3*var(--u))}
+.s-empty b{font-family:var(--display);font-size:calc(3.2*var(--u));color:var(--ink)}
+.tcol{position:relative;background:var(--surface);border-radius:calc(2*var(--u));box-shadow:var(--shadow);padding:calc(3*var(--u)) 1.6vw;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.tcol>h2{font-family:var(--display);font-size:calc(2*var(--u));letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 calc(2.2*var(--u));font-weight:700}
+.tcol .fill{flex:1;min-height:0;display:flex;flex-direction:column;gap:calc(2*var(--u));overflow:hidden}
+.tsec{display:flex;flex-direction:column;gap:calc(1*var(--u));flex-shrink:0}
+.fill>*{flex-shrink:0}
+.tsec>h3{display:flex;align-items:center;gap:calc(1*var(--u));font-family:var(--display);font-size:calc(2.5*var(--u));margin:0;font-weight:700}
+.tsec>h3 .ic{color:var(--kc)}
+.tsec>h3 .n{color:var(--muted);font-weight:600}
+.trow{display:flex;align-items:center;gap:calc(1.4*var(--u));min-width:0}
+.trow .av{width:calc(5.4*var(--u));height:calc(5.4*var(--u));font-size:calc(2*var(--u))}
+.trow .av .badge{width:calc(2.4*var(--u));height:calc(2.4*var(--u));border-width:calc(.35*var(--u));right:calc(-.9*var(--u));bottom:calc(-.7*var(--u))}
+.trow .av .badge .ic{font-size:calc(1.3*var(--u))}
+.trow .av.k .ic{font-size:calc(2.8*var(--u))}
+.trow .who{min-width:0;flex:1}
+.trow .who div{font-weight:700;font-size:calc(2.6*var(--u));line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trow .who small{display:block;color:var(--muted);font-size:calc(2*var(--u));margin-top:calc(.2*var(--u));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tquiet{font-size:calc(2.3*var(--u));color:var(--muted)}
+.tmore{font-size:calc(2*var(--u));color:var(--muted);font-weight:600}
+.hero{display:flex;align-items:center;gap:2vw;padding:calc(2*var(--u)) 1.4vw;border-radius:calc(1.6*var(--u));background:var(--k-bday-soft);--kc:var(--k-bday)}
+.hero .big{width:calc(11*var(--u));height:calc(11*var(--u));border-radius:50%;overflow:hidden;flex:none;background:var(--surface);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:calc(4.4*var(--u));color:var(--k-bday);box-shadow:0 0 0 calc(.6*var(--u)) var(--surface),0 0 0 calc(1*var(--u)) var(--k-bday)}
+.hero .big img{width:100%;height:100%;object-fit:cover}
+.hero .t{min-width:0}
+.hero .t small{display:flex;align-items:center;gap:calc(.8*var(--u));font-size:calc(2.1*var(--u));font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--k-bday)}
+.hero .t div{font-family:var(--display);font-weight:800;font-size:calc(3.8*var(--u));line-height:1.05;letter-spacing:-.02em;margin-top:calc(.8*var(--u));overflow-wrap:anywhere}
+.hero .t p{margin:calc(.8*var(--u)) 0 0;font-size:calc(2.3*var(--u));color:var(--muted)}
+.hero.anniv{background:color-mix(in srgb,var(--k-anniv) 13%,var(--surface));--kc:var(--k-anniv)}
+.hero.anniv .big{color:var(--k-anniv);box-shadow:0 0 0 calc(.7*var(--u)) var(--surface),0 0 0 calc(1.2*var(--u)) var(--k-anniv)}
+.hero.anniv .t small{color:var(--k-anniv)}
+.heros{display:grid;gap:calc(1.6*var(--u))}
+.heros.many .hero .big{width:calc(8*var(--u));height:calc(8*var(--u));font-size:calc(3*var(--u))}
+.heros.many .hero .t div{font-size:calc(3.6*var(--u))}
+.hol{display:flex;align-items:center;gap:calc(1.6*var(--u));padding:calc(2*var(--u)) 1.4vw;border-radius:calc(1.6*var(--u));background:color-mix(in srgb,var(--k-hol) 14%,var(--surface));--kc:var(--k-hol)}
+.hol .ic{font-size:calc(4*var(--u));color:var(--k-hol)}
+.hol div{font-family:var(--display);font-weight:800;font-size:calc(3.4*var(--u));line-height:1.1}
+.hol small{display:block;font-family:var(--body);font-weight:600;font-size:calc(2*var(--u));color:var(--muted);margin-top:calc(.4*var(--u))}
+.tday{display:flex;flex-direction:column;gap:calc(1*var(--u))}
+.tday>b{font-family:var(--display);font-size:calc(2.3*var(--u));font-weight:700;display:flex;gap:calc(1*var(--u));align-items:baseline}
+.tday>b small{font-family:var(--body);color:var(--muted);font-weight:600;font-size:calc(1.9*var(--u))}
+.trow.sm .av{width:calc(4.6*var(--u));height:calc(4.6*var(--u));font-size:calc(1.8*var(--u))}
+.trow.sm .av.k .ic{font-size:calc(2.2*var(--u))}
+.trow.sm .who div{font-size:calc(2.2*var(--u))}
+.trow.sm .who small{font-size:calc(1.8*var(--u))}
+.trow.past{opacity:.45}
+.trow .when{font-family:var(--display);font-weight:800;font-size:calc(2.4*var(--u));width:calc(5*var(--u));text-align:center;flex:none;color:var(--muted)}
+.trow.now .when{color:var(--k-bday)}
+.tfoot{display:flex;justify-content:space-between;font-size:calc(1.8*var(--u));color:var(--muted)}
+.exit{position:fixed;right:16px;bottom:16px;display:none}
+body.tvmode:hover .exit{display:inline-flex;cursor:pointer}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+body.tvmode .tvgrid{animation:fade .6s ease}
+@media (prefers-reduced-motion:reduce){ body.tvmode .tvgrid,.slide{animation:none} .sprog{transition:none!important} }
+/* Portrait TVs */
+
+@media (orientation:portrait){
+  :root{--u:.92vw}
+  .tvgrid{grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1fr) minmax(0,1.15fr) calc(16*var(--u)) calc(17*var(--u))}
+  .tvgrid>.tcol:first-child,.tcol.wx,.tcol.corner{grid-column:1/3}
+  .tvtop{flex-wrap:wrap;row-gap:calc(1*var(--u))}
+  .tvtop .d{flex-basis:100%}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand"><h1>NVE Office Calendar</h1><p>Birthdays, anniversaries, time off and company dates · <a href="./">Team board</a></p></div>
+    <button class="btn ghost" id="tvBtn" type="button">TV mode</button>
+    <button class="btn" id="addBtn" type="button">+ Add</button>
+  </div>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Companies"></nav>
+</header>
+<div class="note" id="note"></div>
+
+<main>
+  <section class="panel">
+    <div class="mhead">
+      <h2 id="mTitle">Month</h2>
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" id="vDay" aria-pressed="false">Day</button><button type="button" id="vWeek" aria-pressed="false">Week</button><button type="button" id="vMonth" aria-pressed="true">Month</button>
+      </div>
+      <span class="navs">
+        <button class="btn ghost sm" id="mToday" type="button">Today</button>
+        <button class="iconbtn" id="mPrev" type="button" aria-label="Previous">‹</button>
+        <button class="iconbtn" id="mNext" type="button" aria-label="Next">›</button>
+      </span>
+    </div>
+    <div id="monthView">
+      <div class="dow" id="dow"></div>
+      <div class="grid" id="grid"></div>
+      <div class="mlist" id="mlist"></div>
+    </div>
+    <div class="wview" id="weekView" hidden></div>
+    <div class="dview" id="dayView" hidden></div>
+    <div class="key" id="key"></div>
+  </section>
+  <aside class="side">
+    <div class="panel"><h3>Coming up · next 14 days</h3><div class="agenda" id="agenda"></div></div>
+    <div class="panel"><h3>TV spotlight</h3><div class="spotadd" id="spotAdd"></div><div class="spotlist" id="spotList"></div></div>
+    <div class="panel"><h3>Links for office TVs</h3><div class="tvlinks" id="tvlinks"></div></div>
+    <div style="text-align:center"><button class="linkbtn" id="binBtn" type="button" hidden>Recently removed</button></div>
+  </aside>
+</main>
+
+<section class="tv" aria-live="polite">
+  <div class="tvtop">
+    <div class="d"><small id="tvCo"></small><div id="tvDate"></div></div>
+    <div class="wxnow" id="tvWxNow"></div>
+    <div class="clock" id="tvClock"></div>
+  </div>
+  <div class="tvalert" id="tvAlert" hidden></div>
+  <div class="tvgrid">
+    <div class="tcol"><h2>Today</h2><div class="fill" id="tvToday"></div></div>
+    <div class="tcol"><h2>Next 7 days</h2><div class="fill" id="tvWeek"></div></div>
+    <div class="tcol spot" id="tvSpotCol"><div class="spothead"><h2 id="spotLabel">Spotlight</h2><div class="sdots" id="spotDots"></div></div><div class="slide" id="tvSpot"></div><div class="sprog" id="spotProg"></div></div>
+    <div class="tcol wx" id="tvWx"></div>
+    <div class="tcol corner"><div class="call" id="tvCall"></div><div class="qr" id="tvQr" hidden><div class="qrbox" id="qrBox"></div><small>Scan to add time off or a shout-out</small></div></div>
+  </div>
+</section>
+<button class="btn ghost exit" id="exitTv" type="button">Exit TV mode</button>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <form class="dlg" id="form" novalidate>
+    <h2 id="dlgTitle">Add to calendar</h2>
+    <div class="fld"><label for="fKind">What is it?</label><div class="kindpick"><span class="kic" id="fKindIc" aria-hidden="true"></span><select class="in" id="fKind"></select></div></div>
+    <div class="fld" id="wPerson"><label for="fPerson" id="lPerson">Who</label><select class="in" id="fPerson"></select></div>
+    <div class="fld" id="wPeople"><span>Who's on call <small>tick everyone on this rotation</small></span><div class="peoplepick" id="fPeople"></div></div>
+    <div class="fld" id="wMsg"><label for="fMsg" id="lMsg">Message</label><textarea class="in" id="fMsg" maxlength="300" rows="3"></textarea></div>
+    <div class="fld" id="wAuthor"><label for="fAuthor" id="lAuthor">From</label><input class="in" id="fAuthor" maxlength="80" autocomplete="off"></div>
+    <div class="fld" id="wImage"><span>Photo</span>
+      <button class="drop" id="drop" type="button"><span class="thumb" id="thumb"></span><span><b id="dropText">Choose or drop a photo</b><small>JPG or PNG. Big photos are resized for you.</small></span></button>
+      <input type="file" id="fFile" accept="image/*" hidden>
+    </div>
+    <div class="fld" id="wTitle"><label for="fTitle" id="lTitle">Name</label><input class="in" id="fTitle" maxlength="120" autocomplete="off"></div>
+    <div class="two" id="wBday">
+      <div class="fld"><label for="fMonth">Month</label><select class="in" id="fMonth"></select></div>
+      <div class="fld"><label for="fDay">Day</label><select class="in" id="fDay"></select></div>
+    </div>
+    <p class="hint" id="hBday">Only the month and day are saved. No birth year.</p>
+    <p class="hint" id="hAnniv">For a new hire, enter their first day. The TVs will welcome them.</p>
+    <div class="two" id="wDates">
+      <div class="fld"><label for="fStart" id="lStart">Date</label><input class="in" id="fStart" type="date"></div>
+      <div class="fld" id="wEnd"><label for="fEnd" id="lEnd">Through <small>optional</small></label><input class="in" id="fEnd" type="date"></div>
+    </div>
+    <div class="fld" id="wHalf"><span>How long</span><div class="halfs" id="fHalf">
+      <label><input type="radio" name="half" value=""> Full day</label>
+      <label><input type="radio" name="half" value="am"> Morning off</label>
+      <label><input type="radio" name="half" value="pm"> Afternoon off</label>
+    </div></div>
+    <div class="fld" id="wTime"><label for="fTime">Time <small>optional, e.g. 2:00 PM</small></label><input class="in" id="fTime" maxlength="30" autocomplete="off"></div>
+    <div class="fld" id="wCos"><span id="lCos">Who it's for <small>leave all unticked for everyone</small></span><div class="cos" id="fCos"></div></div>
+    <p class="hint" id="hOut"></p>
+    <p class="err-line" id="fErr" role="alert"></p>
+    <div class="confirm" id="confirmDel" hidden>Remove this from the calendar? You can restore it for 30 days.<span style="flex:1"></span><button class="btn ghost" type="button" id="noDel">Keep</button><button class="btn danger" type="button" id="yesDel">Remove</button></div>
+    <div class="actions">
+      <button class="btn quiet" type="button" id="delBtn" hidden>Remove</button><span class="sp"></span>
+      <button class="btn ghost" type="button" id="cancel">Cancel</button><button class="btn" type="submit" id="save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="binDlg" aria-labelledby="binTitle">
+  <div class="dlg">
+    <h2 id="binTitle">Recently removed</h2>
+    <p class="hint" style="margin:0">Items removed in the last 30 days. Restore puts them back.</p>
+    <div id="binList" class="binlist"></div>
+    <p class="err-line" id="binErr" role="alert"></p>
+    <div class="actions"><span class="sp"></span><button class="btn ghost" type="button" id="binClose">Close</button></div>
+  </div>
+</dialog>
+
+<script>
+/* =====================================================================
+   SETUP — same two Supabase values as the Team Board (index.html).
+   The calendar reads the board's people (names, photos, companies) and
+   keeps its own dates in the cal_items table (see calendar-setup.sql).
+   ===================================================================== */
+const SUPABASE_URL = "https://pcrazwyuvlimmojiouuy.supabase.co";
+const SUPABASE_KEY = "sb_publishable_DzS50Gig-_PiWkH5mA5MJw_VaBQLBRZ";
+
+const COMPANIES = [
+  { name:"Leadership",             short:"Leadership",    hash:"leadership",    color:"var(--co-lead)" },
+  { name:"New Vista",              short:"New Vista",     hash:"new-vista",     color:"var(--co-nv)" },
+  { name:"Green Estates",          short:"Green Estates", hash:"green-estates", color:"var(--co-ge)" },
+  { name:"Dura Lawn",              short:"Dura Lawn",     hash:"dura-lawn",     color:"var(--co-dl)" },
+  { name:"Buckeye Outdoor Supply", short:"Buckeye",       hash:"buckeye",       color:"var(--co-bos)" }
+];
+const CHECK_SECONDS = 60;   // how often open pages look for changes
+
+// v2 settings
+const OFFICE = { lat:41.5226, lon:-81.3708 };   // weather location: 7572 Mayfield Rd, Chesterland, OH 44026
+const CAL_URL = "https://hillandjane-oh.github.io/nve-org/calendar.html";   // where the TV QR code sends phones
+const SPOT_SECONDS = 15;     // each spotlight slide stays up this long
+const WEATHER_MINUTES = 30;  // how often TVs refresh the forecast
+
+(function(){
+  const $ = id => document.getElementById(id);
+  const ICONS = {
+    cake:'<path d="M4 21h16M5 21v-7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7M5 16c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0M12 12V8M12 5.5c.8-.8.8-1.7 0-2.5-.8.8-.8 1.7 0 2.5z"/>',
+    star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+    away:'<path d="M3 12h12M11 7l5 5-5 5M20 4v16"/>',
+    flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+    brief:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>',
+    tag:'<path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.5"/>',
+    cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    bell:'<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/>',
+    heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+    camera:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l2-3h4l2 3"/><circle cx="12" cy="13.5" r="3.5"/>',
+    quote:'<path d="M5 18c2-1 3-3 3-6H5V7h5v5c0 4-2 6-5 7M14 18c2-1 3-3 3-6h-3V7h5v5c0 4-2 6-5 7"/>',
+    shield:'<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+    wave:'<path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V10M10 9.5V4a1.5 1.5 0 0 1 3 0v6M13 9V5.5a1.5 1.5 0 0 1 3 0V12M16 10a1.5 1.5 0 0 1 3 0v4a7 7 0 0 1-7 7h-1a6 6 0 0 1-5-2.7L3.5 15a1.5 1.5 0 0 1 2.5-1.6L7 15"/>',
+    alert:'<path d="M12 3l9.5 17h-19zM12 10v4M12 17.5v.01"/>',
+    sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    partly:'<path d="M8 3v1.5M3 8h1.5M4.6 4.6l1 1M11.4 4.6l-1 1"/><path d="M5.3 10.6A3.5 3.5 0 0 1 11.3 6.4"/><path d="M9 20h9a3.5 3.5 0 0 0 .4-7 5 5 0 0 0-9.6 1.3A2.9 2.9 0 0 0 9 20z"/>',
+    cloud:'<path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 18z"/>',
+    rain:'<path d="M7 15h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 15z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
+    snow:'<path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M9.5 3.5L12 5l2.5-1.5M9.5 20.5L12 19l2.5 1.5M3 10.5l2.3.3.9-2.2M21 13.5l-2.3-.3-.9 2.2M3 13.5l2.3-.3.9 2.2M21 10.5l-2.3.3-.9-2.2"/>',
+    storm:'<path d="M7 15h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 15z"/><path d="M13 14l-2.5 4h3L11 22"/>',
+    fog:'<path d="M4 8h16M3 12h18M5 16h14M8 20h8"/>',
+    wind:'<path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3M3 12h7"/>'
+  };
+  const KINDS = {
+    birthday:   { label:"Birthday",               short:"Birthday",    icon:"cake", color:"var(--k-bday)"  },
+    anniversary:{ label:"Work anniversary",       short:"Anniversary", icon:"star", color:"var(--k-anniv)" },
+    out:        { label:"Time off",               short:"Time off",    icon:"away", color:"var(--k-out)"   },
+    ooo:        { label:"Out of office",          short:"Out of office",icon:"brief",color:"var(--k-ooo)"   },
+    holiday:    { label:"Holiday / office closed",short:"Holiday",     icon:"flag", color:"var(--k-hol)"   },
+    event:      { label:"Company event",          short:"Event",       icon:"cal",  color:"var(--k-event)" },
+    other:      { label:"Other",                  short:"Other",       icon:"tag",  color:"var(--k-other)" },
+    oncall:     { label:"On call",                short:"On call",     icon:"bell", color:"var(--k-call)"  },
+    // TV spotlight (rotate on the TVs; not shown in the calendar grid)
+    shoutout:   { label:"Shout-out",              short:"Shout-out",   icon:"heart", color:"var(--k-bday)",   spot:true, tv:"Shout-out" },
+    photo:      { label:"Project photo",          short:"Photo",       icon:"camera",color:"var(--k-hol)",    spot:true, tv:"Project spotlight" },
+    review:     { label:"Customer review",        short:"Review",      icon:"quote", color:"var(--k-anniv)",  spot:true, tv:"Customer review" },
+    tip:        { label:"Safety tip",             short:"Safety",      icon:"shield",color:"var(--k-safety)", spot:true, tv:"Safety first" }
+  };
+  // Dropdown order. To add a type: add it to KINDS, list it here, and add it to the kind list in the SQL.
+  const KIND_GROUPS = [
+    ["Calendar",   ["out","ooo","birthday","anniversary","oncall","event","holiday","other"]],
+    ["TV spotlight",["shoutout","photo","review","tip"]]
+  ];
+  const ORDER = { holiday:0, birthday:1, anniversary:2, event:3, other:4, oncall:5, ooo:6, out:7 };
+  const SPOT = Object.keys(KINDS).filter(k=>KINDS[k].spot);
+  const PERSON_KINDS = ["birthday","anniversary","out","ooo","oncall"];   // always tied to someone on the team board
+  const AWAY = k => k==="out" || k==="ooo";
+  const icon = k => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+ICONS[k]+'</svg>';
+  const DEMO = !SUPABASE_URL || !SUPABASE_KEY;
+
+  // ---------- dates (all local, "YYYY-MM-DD") ----------
+  const pad = n => String(n).padStart(2,"0");
+  const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  const parse = s => { const [y,m,d]=String(s).slice(0,10).split("-").map(Number); return new Date(y,m-1,d); };
+  const addDays = (d,n) => new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);
+  const isLeap = y => (y%4===0 && y%100!==0) || y%400===0;
+  const fmt = (d,o) => d.toLocaleDateString("en-US",o);
+  const today = () => { const n=new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); };
+  const daysBetween = (a,b) => Math.round((b-a)/86400000);
+  const MONTHS = Array.from({length:12},(_,i)=>fmt(new Date(2000,i,1),{month:"long"}));
+
+  // ---------- h(): tiny element builder ----------
+  function h(tag, attrs, ...kids){
+    const el=document.createElement(tag);
+    for(const k in (attrs||{})){ const v=attrs[k]; if(v==null||v===false) continue;
+      if(k==="class") el.className=v; else if(k==="html") el.innerHTML=v; else if(k==="style") el.style.cssText=v;
+      else if(k.startsWith("on")) el[k]=v; else el.setAttribute(k, v===true?"":v); }
+    kids.flat().forEach(c=>{ if(c==null||c===false) return; el.append(c.nodeType?c:document.createTextNode(String(c))); });
+    return el;
+  }
+
+  // ---------- data ----------
+  const base = SUPABASE_URL.replace(/\/+$/,"").replace(/\/rest\/v1$/,"");
+  async function rest(path, opts={}){
+    const res = await fetch(base+"/rest/v1/"+path, { method:opts.method||"GET",
+      headers:{ apikey:SUPABASE_KEY, "Content-Type":"application/json", Accept:"application/json" },
+      body: opts.body?JSON.stringify(opts.body):undefined, cache:"no-store" });
+    const text=await res.text(); let data=null; try{ data=text?JSON.parse(text):null; }catch(e){}
+    if(!res.ok){ const err=new Error((data&&(data.message||data.hint))||("HTTP "+res.status)); err.status=res.status; err.code=data&&data.code; throw err; }
+    return data;
+  }
+  // A drawn stand-in for a project photo (sample mode only).
+  function samplePhoto(){
+    try{
+      const c=document.createElement("canvas"); c.width=900; c.height=1100; const x=c.getContext("2d");
+      let g=x.createLinearGradient(0,0,0,600); g.addColorStop(0,"#9cc3e0"); g.addColorStop(1,"#e9e3cf"); x.fillStyle=g; x.fillRect(0,0,900,1100);
+      x.fillStyle="#3d6b4a"; for(let i=0;i<9;i++){ x.beginPath(); x.ellipse(60+i*110,560-(i%3)*30,110,170-(i%2)*40,0,0,7); x.fill(); }
+      x.fillStyle="#527d2c"; x.fillRect(0,600,900,500);
+      x.fillStyle="#8e8a80"; x.beginPath(); x.moveTo(170,1100); x.lineTo(320,700); x.lineTo(700,700); x.lineTo(860,1100); x.fill();
+      x.strokeStyle="#6f6b62"; x.lineWidth=4; for(let r=0;r<8;r++){ const yy=720+r*50; x.beginPath(); x.moveTo(300-r*18,yy); x.lineTo(720+r*20,yy); x.stroke(); }
+      x.fillStyle="#5b4636"; x.beginPath(); x.ellipse(510,830,120,44,0,0,7); x.fill();
+      x.fillStyle="#f29b38"; x.beginPath(); x.moveTo(450,830); x.quadraticCurveTo(500,700,520,760); x.quadraticCurveTo(560,690,575,830); x.fill();
+      return c.toDataURL("image/jpeg",.8);
+    }catch(e){ return null; }
+  }
+  // Sample data, used before Supabase is set up. Dates are relative to today so it always looks alive.
+  function sample(){
+    const t=today(), d=n=>ymd(addDays(t,n)), y=t.getFullYear();
+    const people=[
+      {id:"s1",name:"Sample Owner",title:"President & CEO",companies:COMPANIES.map(c=>c.name)},
+      {id:"s2",name:"Sample Designer",title:"Landscape Designer",companies:["New Vista"]},
+      {id:"s3",name:"Sample Account Manager",title:"Account Manager",companies:["Green Estates"]},
+      {id:"s4",name:"Sample Technician",title:"Lawn Care Technician",companies:["Dura Lawn"]},
+      {id:"s5",name:"Sample Yard Manager",title:"Yard Manager",companies:["Buckeye Outdoor Supply","Green Estates"]},
+      {id:"s6",name:"Sample Estimator",title:"Estimator",companies:["New Vista"]},
+      {id:"s7",name:"Sample New Hire",title:"Snow & Ice Coordinator",companies:["Green Estates"]},
+      {id:"s8",name:"Sample Crew Lead",title:"Crew Lead",companies:["Green Estates"]}
+    ];
+    const bday=n=>{ const x=addDays(t,n); return "2000-"+pad(x.getMonth()+1)+"-"+pad(x.getDate()); };
+    const ann=(n,yrs)=>{ const x=addDays(t,n); return (x.getFullYear()-yrs)+"-"+pad(x.getMonth()+1)+"-"+pad(x.getDate()); };
+    const items=[
+      {id:"i1",kind:"birthday",person_id:"s2",start_date:bday(0)},
+      {id:"i2",kind:"birthday",person_id:"s4",start_date:bday(4)},
+      {id:"i3",kind:"birthday",person_id:"s5",start_date:bday(-6)},
+      {id:"i4",kind:"anniversary",person_id:"s3",start_date:ann(2,5)},
+      {id:"i5",kind:"out",person_id:"s6",start_date:d(-1),end_date:d(1),title:"Vacation"},
+      {id:"i6",kind:"out",person_id:"s1",start_date:d(0),part_of_day:"pm"},
+      {id:"i7",kind:"out",person_id:"s5",start_date:d(3)},
+      {id:"i11",kind:"ooo",person_id:"s3",start_date:d(0),title:"Site walk at Legacy Village"},
+      {id:"i12",kind:"ooo",person_id:"s2",start_date:d(2),end_date:d(3),title:"Landscape Ohio! trade show"},
+      {id:"i13",kind:"other",title:"Uniform orders due",start_date:d(4),companies:[]},
+      {id:"i8",kind:"event",title:"All-company safety meeting",start_date:d(1),start_time:"7:00 AM",companies:[]},
+      {id:"i9",kind:"event",title:"Snow crew kickoff",start_date:d(5),start_time:"6:30 AM",companies:["Green Estates"]},
+      {id:"i10",kind:"holiday",title:"Thanksgiving — office closed",start_date:y+"-11-26",end_date:y+"-11-27",companies:[]},
+      {id:"i14",kind:"anniversary",person_id:"s7",start_date:d(-2)},
+      {id:"i15",kind:"oncall",person_id:"s8",title:"Snow crew A",start_date:d(-2),end_date:d(4)},
+      {id:"i16",kind:"oncall",person_id:"s3",title:"Snow crew A",start_date:d(-2),end_date:d(4)},
+      {id:"i17",kind:"shoutout",person_id:"s5",title:"Thanks for loading three trucks before 6 AM so we could beat the rain Monday. Huge help!",author:"Sample Crew Lead",start_date:d(-1),end_date:d(12)},
+      {id:"i18",kind:"photo",title:"Bluestone patio and fire pit wrapped up in Chagrin Falls",companies:["New Vista"],image:samplePhoto(),start_date:d(-3),end_date:d(10)},
+      {id:"i19",kind:"review",title:"The crew was on time every week and the property has never looked better. Snow was cleared before our first shift every single time.",author:"Facilities manager, Mentor office park",companies:["Green Estates"],start_date:d(-4),end_date:d(9)},
+      {id:"i20",kind:"tip",title:"Walk around the truck before you back up. Every time, even in the yard.",start_date:d(-1),end_date:d(12)}
+    ].map(x=>({end_date:null,part_of_day:null,start_time:null,companies:[],title:null,author:null,image:null,deleted_at:null,...x}));
+    return {people, items};
+  }
+  let needsUpgrade=false;
+  let mode = DEMO ? "demo" : "live";   // "live" | "demo" | "setup" (people live, calendar table missing)
+  let sampleSet = null;
+  const api = {
+    people: async()=> mode==="demo" ? sampleSet.people : rest("people?select=id,name,title,companies,image,image_is_card,deleted_at&deleted_at=is.null"),
+    items:  async()=>{
+      if(mode!=="live") return sampleSet.items;
+      const cols="id,kind,person_id,title,start_date,end_date,part_of_day,start_time,companies,deleted_at";
+      try{ const r=await rest("cal_items?select="+cols+",author,image&order=start_date.asc"); needsUpgrade=false; return r; }
+      catch(e){ if(e.status===400 && /author|image|42703/.test(String(e.code)+e.message)){ needsUpgrade=true; return rest("cal_items?select="+cols+"&order=start_date.asc"); } throw e; }
+    },
+    version:async()=> mode!=="live" ? "sample" : rest("rpc/cal_version",{method:"POST",body:{}}),
+    save:   async a=>{ if(mode!=="live"){ const old=a.p_id?sampleSet.items.find(x=>x.id===a.p_id):null;
+                         const row={id:a.p_id||("n"+Date.now()+Math.random().toString(36).slice(2,6)),kind:a.p_kind,person_id:a.p_person_id,title:a.p_title,start_date:a.p_start_date,end_date:a.p_end_date,part_of_day:a.p_part_of_day,start_time:a.p_start_time,companies:a.p_companies||[],author:a.p_author,image:a.p_image||(old&&old.image)||null,deleted_at:null};
+                         sampleSet.items = a.p_id ? sampleSet.items.map(x=>x.id===a.p_id?row:x) : sampleSet.items.concat(row); return; }
+                       return rest("rpc/save_cal_item",{method:"POST",body:a}); },
+    remove: async id=>{ if(mode!=="live"){ sampleSet.items=sampleSet.items.map(x=>x.id===id?{...x,deleted_at:new Date().toISOString()}:x); return; } return rest("rpc/remove_cal_item",{method:"POST",body:{p_id:id}}); },
+    restore:async id=>{ if(mode!=="live"){ sampleSet.items=sampleSet.items.map(x=>x.id===id?{...x,deleted_at:null}:x); return; } return rest("rpc/restore_cal_item",{method:"POST",body:{p_id:id}}); }
+  };
+
+  // ---------- state ----------
+  let people=[], byId=new Map(), items=[], removed=[], loaded=false, lastVersion=null;
+  let tab="All", cursor=today(), view="month";
+  try{ const v=localStorage.getItem("nveCalView"); if(["day","week","month"].includes(v)) view=v; }catch(e){}
+  const monthOf = d => new Date(d.getFullYear(), d.getMonth(), 1);
+  let tv=false, tvCo="All", wake=null, lastDay=ymd(today());
+
+  function note(text, err){ const n=$("note"); n.innerHTML=""; if(text) n.append(h("div",{class:err?"err":""},text)); }
+  const initials = n => String(n||"?").split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join("");
+  const imgSrc = p => p && typeof p.image==="string" && p.image.indexOf("data:image/")===0 ? p.image : "";
+  const personOf = it => it.person_id ? byId.get(String(it.person_id)) : null;
+
+  function relevant(it, co){
+    if(co==="All") return true;
+    if(PERSON_KINDS.includes(it.kind) || it.kind==="shoutout" || (it.kind==="other" && it.person_id && !(it.companies||[]).length)){ const p=personOf(it); return !!(p && (p.companies||[]).includes(co)); }
+    return !(it.companies||[]).length || it.companies.includes(co);
+  }
+
+  // Expand items into dated occurrences between from..to (inclusive). Returns Map(dateStr -> [occ]).
+  function occurrences(from, to, co){
+    const out=new Map(), push=(ds,o)=>{ if(!out.has(ds)) out.set(ds,[]); out.get(ds).push(o); };
+    items.forEach(it=>{
+      if(SPOT.includes(it.kind) || !relevant(it,co)) return;
+      const p=personOf(it);
+      if((PERSON_KINDS.includes(it.kind) || it.person_id) && !p) return;   // person no longer on the board
+      const s=parse(it.start_date);
+      if(it.kind==="birthday" || it.kind==="anniversary"){
+        for(let y=from.getFullYear(); y<=to.getFullYear(); y++){
+          let m=s.getMonth(), d=s.getDate(); if(m===1 && d===29 && !isLeap(y)) d=28;
+          const dt=new Date(y,m,d); if(dt<from || dt>to) continue;
+          const years=y-s.getFullYear(); if(it.kind==="anniversary" && years<0) continue;   // 0 = first day
+          push(ymd(dt),{it,p,years,date:dt});
+        }
+      } else {
+        const e=it.end_date?parse(it.end_date):s;
+        for(let dt=s<from?from:s; dt<=e && dt<=to; dt=addDays(dt,1))
+          push(ymd(dt),{it,p,date:dt,first:+dt===+s,last:+dt===+e,start:s,end:e});
+      }
+    });
+    out.forEach(list=>list.sort((a,b)=>ORDER[a.it.kind]-ORDER[b.it.kind] || label(a).localeCompare(label(b))));
+    return out;
+  }
+  const label = o => o.p ? o.p.name : (o.it.title||KINDS[o.it.kind].label);
+
+  function nextWorkday(d){ let x=addDays(d,1); while(x.getDay()===0||x.getDay()===6) x=addDays(x,1); return x; }
+  function relDay(d, from){
+    const n=daysBetween(from||today(), d);
+    if(n===0) return "today"; if(n===1) return "tomorrow";
+    if(n>1 && n<7) return fmt(d,{weekday:"long"});
+    return fmt(d,{weekday:"short",month:"short",day:"numeric"});
+  }
+  function detail(o, onDay){
+    const it=o.it, k=it.kind;
+    if(k==="birthday") return "Birthday";
+    if(k==="anniversary") return o.years===0 ? "First day at NVE" : o.years+(o.years===1?" year":" years")+" with NVE";
+    if(k==="oncall") return [it.title||"On call", +o.end!==+o.start ? "through "+relDay(o.end,onDay) : null].filter(Boolean).join(" · ");
+    if(k==="out" || k==="ooo"){
+      // Out of office leads with where they are ("Site walk · back tomorrow"); time off never shows its note here.
+      const w = k==="ooo"&&it.title ? it.title : (k==="out"?"Out":"Out of office");
+      if(it.part_of_day) return w+(it.part_of_day==="am"?" · this morning":" · this afternoon");
+      const back=nextWorkday(o.end);
+      if(onDay && daysBetween(onDay,o.end)===0) return w+" · back "+relDay(back,onDay);
+      return w+" through "+relDay(o.end,onDay)+" · back "+relDay(back,onDay);
+    }
+    if(k==="holiday") return o.end && +o.end!==+o.start ? "Through "+fmt(o.end,{weekday:"long",month:"short",day:"numeric"}) : "Holiday";
+    if(k==="event" || k==="other"){ const p=[o.p?it.title:null, it.start_time]; if(o.p) return p.filter(Boolean).join(" · "); const cs=(it.companies||[]); p.push(cs.length?cs.map(c=>(COMPANIES.find(x=>x.name===c)||{short:c}).short).join(", "):"Everyone"); return p.filter(Boolean).join(" · "); }
+    return "";
+  }
+  function avatar(o){
+    const kc=KINDS[o.it.kind].color, src=imgSrc(o.p);
+    if(o.p){
+      const a=h("div",{class:"av",style:"--kc:"+kc});
+      a.append(src? h("img",{src,alt:""}) : h("span",{class:"ini"},initials(o.p.name)));
+      a.append(h("span",{class:"badge",html:icon(KINDS[o.it.kind].icon)}));
+      return a;
+    }
+    return h("div",{class:"av k",style:"--kc:"+kc,html:icon(KINDS[o.it.kind].icon)});
+  }
+
+  // ---------- edit view ----------
+  function renderTabs(){
+    const nav=$("tabs"); nav.innerHTML="";
+    [{name:"All"}].concat(COMPANIES).forEach(c=>{
+      nav.append(h("button",{type:"button",class:"tab",role:"tab","aria-selected":String(c.name===tab),onclick:()=>{tab=c.name; render();}},
+        c.color?h("span",{class:"sw",style:"background:"+c.color}):null, c.name));
+    });
+  }
+  function chip(o, ds){
+    const k=KINDS[o.it.kind], cont=o.it.kind!=="birthday"&&o.it.kind!=="anniversary"&&!o.first&&o.date.getDay()!==0;
+    const txt = o.it.kind==="anniversary" ? label(o)+(o.years===0?" · first day":" · "+o.years+" yr") : (o.it.kind==="event"||o.it.kind==="other"&&!o.p)&&o.it.start_time ? o.it.start_time+" "+label(o)
+              : o.it.kind==="other"&&o.p ? label(o)+" · "+o.it.title
+              : AWAY(o.it.kind)&&o.it.part_of_day ? label(o)+" ("+o.it.part_of_day.toUpperCase()+")" : label(o);
+    return h("button",{type:"button",class:"chip"+(cont?" cont":""),style:"--kc:"+k.color,title:label(o)+" — "+detail(o),
+      onclick:e=>{e.stopPropagation(); openForm(o.it);}}, h("span",{html:icon(k.icon),style:"display:contents"}), h("span",null,txt));
+  }
+  function renderMonth(){
+    const month=monthOf(cursor);
+    $("mTitle").textContent=fmt(month,{month:"long",year:"numeric"});
+    const first=addDays(month,-month.getDay()), lastOfMonth=new Date(month.getFullYear(),month.getMonth()+1,0);
+    const last=addDays(lastOfMonth,6-lastOfMonth.getDay());
+    const occ=occurrences(first,last,tab), t=ymd(today());
+    const g=$("grid"); g.innerHTML="";
+    for(let d=first; d<=last; d=addDays(d,1)){
+      const ds=ymd(d), list=occ.get(ds)||[], other=d.getMonth()!==month.getMonth();
+      const cell=h("div",{class:"cell"+(other?" other":"")+(ds===t?" today":"")+(d.getDay()%6===0?" weekend":""),role:"button",tabindex:"0",
+        "aria-label":fmt(d,{weekday:"long",month:"long",day:"numeric"})+(list.length?", "+list.length+" items":"")+". Add an item",
+        onclick:()=>openForm(null,ds), onkeydown:e=>{ if(e.target===cell&&(e.key==="Enter"||e.key===" ")){e.preventDefault(); openForm(null,ds);} }},
+        h("button",{type:"button",class:"dn","aria-label":"Open "+fmt(d,{weekday:"long",month:"long",day:"numeric"}),
+          onclick:e=>{ e.stopPropagation(); goDay(new Date(d)); }},d.getDate()));
+      const shown=[], groups={};
+      list.forEach(o=>{ if(o.it.kind!=="oncall") return shown.push(o); const k=o.it.title||"On call";
+        if(!groups[k]){ groups[k]={group:true,title:k,n:0,it:o.it,date:o.date}; shown.push(groups[k]); } groups[k].n++; });
+      const max=shown.length>4?3:4;
+      shown.slice(0,max).forEach(o=>cell.append(o.group ? h("button",{type:"button",class:"chip",style:"--kc:"+KINDS.oncall.color,title:o.title+" — "+o.n+" on call",
+        onclick:e=>{e.stopPropagation(); goDay(new Date(o.date));}}, h("span",{html:icon("bell"),style:"display:contents"}), h("span",null,o.title+" · "+o.n)) : chip(o,ds)));
+      if(shown.length>max) cell.append(h("span",{class:"more"},"+"+(shown.length-max)+" more"));
+      g.append(cell);
+    }
+    // phone list
+    const ml=$("mlist"); ml.innerHTML="";
+    const mOcc=occurrences(month,lastOfMonth,tab); const days=[...mOcc.keys()].sort();
+    if(!days.length) ml.append(h("div",{class:"quiet-line"},"Nothing on the calendar this month."));
+    days.forEach(ds=>ml.append(agendaDay(parse(ds), mOcc.get(ds))));
+  }
+  function rowBtn(o, d){
+    return h("button",{type:"button",class:"row",onclick:e=>{ e.stopPropagation(); openForm(o.it); }}, avatar(o),
+      h("div",{class:"who"}, h("div",null,label(o)), h("small",null,detail(o,d))));
+  }
+  function renderWeek(){
+    const start=addDays(cursor,-cursor.getDay()), end=addDays(start,6), occ=occurrences(start,end,tab), t=ymd(today());
+    const sameM=start.getMonth()===end.getMonth();
+    $("mTitle").textContent = sameM ? fmt(start,{month:"long"})+" "+start.getDate()+"–"+end.getDate()+", "+end.getFullYear()
+      : fmt(start,{month:"short",day:"numeric"})+" – "+fmt(end,{month:"short",day:"numeric",year:"numeric"});
+    const w=$("weekView"); w.innerHTML="";
+    for(let d=start; d<=end; d=addDays(d,1)){
+      const ds=ymd(d), day=new Date(d), list=occ.get(ds)||[];
+      w.append(h("div",{class:"wcol"+(ds===t?" today":"")+(d.getDay()%6===0?" weekend":"")},
+        h("button",{type:"button",class:"whead",onclick:()=>goDay(day),"aria-label":"Open "+fmt(d,{weekday:"long",month:"long",day:"numeric"})},
+          h("small",null,fmt(d,{weekday:"short"})), h("b",null,d.getDate())),
+        h("div",{class:"wbody",title:"Click empty space to add",onclick:()=>openForm(null,ds)},
+          list.length ? list.map(o=>rowBtn(o,day)) : h("div",{class:"wempty"},"—"))));
+    }
+  }
+  function renderDay(){
+    const d=cursor, ds=ymd(d), list=(occurrences(d,d,tab).get(ds)||[]), n=daysBetween(today(),d);
+    $("mTitle").textContent=fmt(d,{weekday:"long",month:"long",day:"numeric"})+(n===0?" · Today":n===1?" · Tomorrow":n===-1?" · Yesterday":"");
+    const v=$("dayView"); v.innerHTML="";
+    const groups=[["holiday","Holiday"],["birthday","Birthdays"],["anniversary","Work anniversaries"],["event","Company events"],["other","Other"],["oncall","On call"],["ooo","Out of office"],["out","Time off"]];
+    if(!list.length) v.append(h("div",{class:"dempty"},h("b",null,"Nothing on the calendar"),"Add a birthday, time off or a company date for this day."));
+    groups.forEach(([k,t])=>{
+      const rows=list.filter(o=>o.it.kind===k); if(!rows.length) return;
+      v.append(h("div",{class:"dsec",style:"--kc:"+KINDS[k].color}, h("h3",{html:icon(KINDS[k].icon)},t+" · "+rows.length),
+        rows.map(o=>{ const b=rowBtn(o,d); if(o.p&&o.p.title) b.querySelector(".who div").append(h("span",{class:"tt"},o.p.title)); if(o.it.kind==="out"&&o.it.title) b.querySelector("small").append(" · "+o.it.title+" (not shown on TVs)"); return b; })));
+    });
+    v.append(h("div",{class:"dfoot"}, h("button",{type:"button",class:"btn",onclick:()=>openForm(null,ds)},"+ Add to this day")));
+  }
+  function renderCal(){
+    ["day","week","month"].forEach(v=>$("v"+v[0].toUpperCase()+v.slice(1)).setAttribute("aria-pressed",String(view===v)));
+    $("monthView").hidden=view!=="month"; $("weekView").hidden=view!=="week"; $("dayView").hidden=view!=="day";
+    $("key").hidden=view!=="month";
+    const lbl={day:["Previous day","Next day"],week:["Previous week","Next week"],month:["Previous month","Next month"]}[view];
+    $("mPrev").setAttribute("aria-label",lbl[0]); $("mNext").setAttribute("aria-label",lbl[1]);
+    if(view==="month") renderMonth(); else if(view==="week") renderWeek(); else renderDay();
+  }
+  function setView(v){ view=v; try{ localStorage.setItem("nveCalView",v); }catch(e){} renderCal(); }
+  function goDay(d){ cursor=d; setView("day"); }
+  function agendaDay(d, list){
+    const n=daysBetween(today(),d);
+    return h("div",{class:"aday"},
+      h("b",null, fmt(d,{weekday:"long",month:"short",day:"numeric"}), n===0?h("small",null,"Today"):n===1?h("small",null,"Tomorrow"):null),
+      list.map(o=>h("button",{type:"button",class:"row",onclick:()=>openForm(o.it)}, avatar(o),
+        h("div",{class:"who"}, h("div",null,label(o)), h("small",null,detail(o,d))))));
+  }
+  function renderAgenda(){
+    const t=today(), occ=occurrences(t,addDays(t,13),tab), a=$("agenda"); a.innerHTML="";
+    const days=[...occ.keys()].sort();
+    if(!days.length){ a.append(h("div",{class:"quiet-line"},loaded?"Nothing in the next two weeks. Add birthdays, time off and company dates with + Add.":"Loading…")); return; }
+    days.forEach(ds=>{
+      // time off: only show on its first day in this list, to keep it short
+      const list=occ.get(ds).filter(o=>!(AWAY(o.it.kind)||o.it.kind==="oncall")||o.first||ds===ymd(t));
+      if(list.length) a.append(agendaDay(parse(ds),list));
+    });
+  }
+  function renderSpotPanel(){
+    const A=$("spotAdd"), L=$("spotList"), t=today(); A.innerHTML=""; L.innerHTML="";
+    SPOT.forEach(k=>A.append(h("button",{type:"button",style:"--kc:"+KINDS[k].color,onclick:()=>openForm(null,null,k),html:icon(KINDS[k].icon)},"+ "+KINDS[k].label)));
+    const rows=[];
+    items.filter(it=>it.kind==="anniversary").forEach(it=>{ const p=personOf(it), n=daysBetween(t,parse(it.start_date)); if(p&&n>=-21&&n<=7) rows.push({it,p,auto:true,s:parse(it.start_date)}); });
+    items.filter(it=>SPOT.includes(it.kind)).forEach(it=>{ const s0=parse(it.start_date), e=it.end_date?parse(it.end_date):addDays(s0,13); if(e>=t) rows.push({it,p:personOf(it),s:s0,e}); });
+    rows.sort((a,b)=>a.s-b.s);
+    if(!rows.length){ L.append(h("div",{class:"quiet-line"},"Nothing scheduled. Anything you add here rotates on the TVs for two weeks.")); return; }
+    rows.forEach(r=>{
+      const it=r.it, k=KINDS[it.kind], live=r.s<=t;
+      const name = r.auto ? "Welcome, "+r.p.name : it.kind==="shoutout" ? "To "+(r.p?r.p.name:"(removed person)") : it.kind==="photo" ? (it.title||"Project photo")
+                 : it.kind==="review" ? (it.author||"Customer review") : it.title;
+      const when = r.auto ? "New hire · from the start date, automatic" : (live?"Showing now":"Starts "+fmt(r.s,{month:"short",day:"numeric"}))+" · until "+fmt(r.e,{month:"short",day:"numeric"});
+      const lead = it.kind==="photo"&&it.image ? h("img",{class:"spotthumb",src:it.image,alt:""}) : avatar({it,p:r.p});
+      const sm=h("small",null); if(live&&!r.auto){ sm.append(h("b",null,"Showing now"), " · until "+fmt(r.e,{month:"short",day:"numeric"})); } else sm.append(when);
+      L.append(h("button",{type:"button",class:"row",style:"--kc:"+k.color,onclick:()=>openForm(it)}, lead, h("div",{class:"who"}, h("div",null,name), sm)));
+    });
+  }
+  function renderLinks(){
+    const l=$("tvlinks"); l.innerHTML="";
+    const page=location.href.split("#")[0].split("?")[0];
+    [{name:"All",hash:"",short:"Everyone"}].concat(COMPANIES).forEach(c=>{
+      const href=page+"?tv"+(c.hash?"="+c.hash:"");
+      l.append(h("a",{href,target:"_blank",rel:"noopener"}, c.color?h("i",{style:"background:"+c.color}):h("i",{style:"background:var(--accent)"}),
+        c.name==="All"?"Whole office":c.name, h("span",null,"?tv"+(c.hash?"="+c.hash:""))));
+    });
+  }
+  function renderKey(){
+    const k=$("key"); k.innerHTML="";
+    Object.values(KINDS).filter(x=>!x.spot).forEach(x=>k.append(h("span",{style:"--kc:"+x.color,html:icon(x.icon)+x.short})));
+  }
+  function render(){
+    if(tv) return renderTV();
+    renderTabs(); renderCal(); renderAgenda(); renderSpotPanel();
+  }
+  function step(n){
+    if(view==="month") cursor=new Date(cursor.getFullYear(),cursor.getMonth()+n,1);
+    else cursor=addDays(cursor, view==="week"?7*n:n);
+    renderCal();
+  }
+  $("mPrev").onclick=()=>step(-1);
+  $("mNext").onclick=()=>step(1);
+  // Today always lands on today's details: the day view (week view stays in week view).
+  $("mToday").onclick=()=>{ cursor=today(); if(view==="month") setView("day"); else renderCal(); };
+  $("vDay").onclick=()=>{ if(view==="month" && monthOf(cursor).getMonth()===today().getMonth() && cursor.getFullYear()===today().getFullYear()) cursor=today(); setView("day"); };
+  $("vWeek").onclick=()=>{ if(view==="month" && monthOf(cursor).getMonth()===today().getMonth() && cursor.getFullYear()===today().getFullYear()) cursor=today(); setView("week"); };
+  $("vMonth").onclick=()=>setView("month");
+  $("dow").append(...["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=>h("div",null,d)));
+
+  // ---------- TV view ----------
+  function trow(o, opts={}){
+    return h("div",{class:"trow"+(opts.sm?" sm":"")+(opts.past?" past":"")+(opts.now?" now":"")},
+      opts.when!=null?h("div",{class:"when"},opts.when):null, avatar(o),
+      h("div",{class:"who"}, h("div",null,label(o)), h("small",null,opts.sub!=null?opts.sub:detail(o,opts.day))));
+  }
+  function section(kind, title, rows, emptyText){
+    const s=h("div",{class:"tsec",style:"--kc:"+KINDS[kind].color},
+      h("h3",{html:icon(KINDS[kind].icon)}, ), );
+    s.firstChild.append(title, rows.length?h("span",{class:"n"}," · "+rows.length):"");
+    if(!rows.length){ if(!emptyText) return null; s.append(h("div",{class:"tquiet"},emptyText)); }
+    rows.forEach(r=>s.append(r));
+    return s;
+  }
+  function hero(o){
+    const src=imgSrc(o.p), isB=o.it.kind==="birthday", isNew=!isB&&o.years===0;
+    return h("div",{class:"hero"+(isB?"":" anniv")},
+      h("div",{class:"big"}, src?h("img",{src,alt:""}):initials(o.p.name)),
+      h("div",{class:"t"}, h("small",{html:icon(isNew?"wave":KINDS[o.it.kind].icon)+(isB?"Happy birthday":isNew?"First day — welcome!":"Happy "+o.years+(o.years===1?" year":" years")+" at NVE")}),
+        h("div",null,o.p.name), o.p.title?h("p",null,o.p.title):null));
+  }
+  function renderTV(){
+    const t=today(), co=tvCo;
+    const coObj=COMPANIES.find(c=>c.name===co);
+    $("tvCo").innerHTML=""; if(coObj) $("tvCo").append(h("i",{style:"background:"+coObj.color})); $("tvCo").append(coObj?coObj.name:"New Vista Enterprises");
+    $("tvDate").textContent=fmt(t,{weekday:"long",month:"long",day:"numeric"});
+    tick();
+
+    // Today
+    const occT=(occurrences(t,t,co).get(ymd(t))||[]).filter(o=>o.it.kind!=="oncall");
+    const T=$("tvToday"); T.innerHTML="";
+    const celebs=occT.filter(o=>o.it.kind==="birthday"||o.it.kind==="anniversary");
+    occT.filter(o=>o.it.kind==="holiday").forEach(o=>T.append(h("div",{class:"hol",html:icon("flag")},h("div",null,o.it.title,h("small",null,detail(o,t))))));
+    if(celebs.length){ const hs=h("div",{class:"heros"+(celebs.length>1?" many":"")}); celebs.slice(0,3).forEach(o=>hs.append(hero(o))); T.append(hs); }
+    const ev=occT.filter(o=>o.it.kind==="event"||o.it.kind==="other"), out=occT.filter(o=>o.it.kind==="out"), ooo=occT.filter(o=>o.it.kind==="ooo");
+    const sE=section("event","Happening today",ev.map(o=>trow(o,{day:t}))); if(sE) T.append(sE);
+    // one "Away" list: out-of-office first, then time off; each row says which
+    T.append(section("out","Away today",ooo.concat(out).map(o=>trow(o,{day:t})), "Everyone's in today."));
+    if(celebs.length>3) T.append(h("div",{class:"tmore"},"+"+(celebs.length-3)+" more celebrations today"));
+
+    // Next 7 days
+    const W=$("tvWeek"); W.innerHTML="";
+    const wEnd=addDays(t,7), occW=occurrences(addDays(t,1),wEnd,co); let any=false;
+    for(let d=addDays(t,1); d<=wEnd; d=addDays(d,1)){
+      const list=(occW.get(ymd(d))||[]).filter(o=>o.it.kind!=="oncall" && (!AWAY(o.it.kind)||o.first));
+      if(!list.length) continue; any=true;
+      W.append(h("div",{class:"tday"}, h("b",null,fmt(d,{weekday:"long"}),h("small",null,fmt(d,{month:"short",day:"numeric"}))),
+        list.map(o=>trow(o,{sm:true,day:d,sub: AWAY(o.it.kind) ? outSpan(o) : undefined}))));
+    }
+    if(!any) W.append(h("div",{class:"tquiet"},"Nothing on the calendar this week."));
+
+    renderCall(); renderWx(); renderQR(); renderSpot();
+    const fitAll=()=>{ clip(T); clip(W); clip($("tvCall")); const m=document.querySelector("#tvSpot .s-month"); if(m) clip(m); };
+    requestAnimationFrame(fitAll); setTimeout(fitAll,1200);
+    try{ document.fonts && document.fonts.ready.then(fitAll); }catch(e){}
+  }
+
+  // ---------- TV: on call ----------
+  function renderCall(){
+    const t=today(), C=$("tvCall"); C.innerHTML="";
+    const occ=occurrences(t,addDays(t,6),tvCo), now=(occ.get(ymd(t))||[]).filter(o=>o.it.kind==="oncall");
+    let rows=now, head="On call now";
+    if(!rows.length){   // nobody today: show who's next this week
+      for(let d=addDays(t,1); d<=addDays(t,6) && !rows.length; d=addDays(d,1)){ rows=(occ.get(ymd(d))||[]).filter(o=>o.it.kind==="oncall"&&o.first); if(rows.length) head="On call from "+fmt(d,{weekday:"long"}); }
+    }
+    C.append(h("h3",{html:icon("bell")},head));
+    if(!rows.length) C.append(h("div",{class:"tquiet"},"No on-call rotation this week."));
+    const groups={}; rows.forEach(o=>{ const k=(o.it.title||"")+"|"+ymd(o.end); (groups[k]=groups[k]||[]).push(o); });
+    Object.values(groups).forEach(g=>{
+      const o=g[0], line=[o.it.title, +o.end!==+o.start?"through "+relDay(o.end):null].filter(Boolean).join(" · ");
+      C.append(h("div",{class:"crew"}, line?h("small",null,line):null,
+        h("div",{class:"crewp"}, g.map(x=>x.p.name).join(" · "))));
+    });
+  }
+
+  // ---------- TV: QR code to add from a phone ----------
+  let qrDone=false;
+  function addUrl(){
+    const here=location.protocol.indexOf("http")===0 && !/claude|anthropic|usercontent/i.test(location.hostname);
+    return (here ? location.origin+location.pathname : CAL_URL)+"?add";
+  }
+  function renderQR(){
+    if(qrDone || !window.QRCode) return;
+    try{ new QRCode($("qrBox"),{text:addUrl(),width:240,height:240,colorDark:"#17201b",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); $("tvQr").hidden=false; qrDone=true; }catch(e){}
+  }
+
+  // ---------- TV: weather (National Weather Service, free, no key) ----------
+  let wx={days:[],now:null,alerts:[],ok:false,sample:false}, wxUrl=null;
+  const getJSON = u => fetch(u,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); });
+  function wxKind(t){
+    t=String(t||"").toLowerCase();
+    if(/snow|flurr|sleet|blizzard|wintry|freezing|ice/.test(t)) return "snow";
+    if(/thunder|t-storm/.test(t)) return "storm";
+    if(/rain|shower|drizzle/.test(t)) return "rain";
+    if(/fog|haze|smoke/.test(t)) return "fog";
+    if(/wind|breezy|blustery/.test(t)) return "wind";
+    if(/partly|mostly sunny|mostly clear/.test(t)) return "partly";
+    if(/cloud|overcast/.test(t)) return "cloud";
+    if(/sunny|clear|fair/.test(t)) return "sun";
+    return "partly";
+  }
+  function parseWx(periods, alerts){
+    const days=[], by={};
+    (periods||[]).forEach(pd=>{
+      const ds=String(pd.startTime).slice(0,10);
+      let d=by[ds]; if(!d){ d=by[ds]={date:parse(ds),hi:null,lo:null,short:"",pop:0}; days.push(d); }
+      if(pd.isDaytime){ d.hi=pd.temperature; d.short=pd.shortForecast; } else { d.lo=pd.temperature; if(!d.short) d.short=pd.shortForecast; }
+      const pop=pd.probabilityOfPrecipitation&&pd.probabilityOfPrecipitation.value; if(pop>d.pop) d.pop=pop;
+    });
+    const first=(periods||[])[0];
+    const winter=/winter|snow|ice|blizzard|freez|frost|wind chill|lake effect|sleet/i;
+    const al=(alerts||[]).map(f=>f.properties||{}).filter(a=>a.event).map(a=>({event:a.event, ends:a.ends||a.expires, winter:winter.test(a.event)}))
+      .sort((a,b)=>(b.winter-a.winter));
+    return {days:days.slice(0,7), now:first?{temp:first.temperature,short:first.shortForecast}:null, alerts:al, ok:days.length>0, sample:false};
+  }
+  function sampleWx(){
+    const t=today(), list=[["Partly Sunny",58,44,10],["Rain Showers Likely",54,41,70],["Mostly Cloudy",49,36,20],["Sunny",52,35,0],["Chance Rain And Snow",41,31,40],["Snow Showers",36,28,60],["Mostly Sunny",44,30,0]];
+    const days=list.map((x,i)=>({date:addDays(t,i),short:x[0],hi:x[1],lo:x[2],pop:x[3]}));
+    const ends=addDays(t,1); ends.setHours(9);
+    return {days, now:{temp:51,short:"Partly Sunny"}, alerts:[{event:"Frost Advisory",ends:ends.toISOString(),winter:true}], ok:true, sample:true};
+  }
+  async function loadWeather(){
+    try{
+      if(!wxUrl){ const pt=await getJSON("https://api.weather.gov/points/"+OFFICE.lat+","+OFFICE.lon); wxUrl=pt.properties.forecast; }
+      const [fc, al]=await Promise.all([ getJSON(wxUrl), getJSON("https://api.weather.gov/alerts/active?point="+OFFICE.lat+","+OFFICE.lon).catch(()=>({features:[]})) ]);
+      wx=parseWx(fc.properties&&fc.properties.periods, al.features);
+    }catch(e){ wx = mode!=="live" ? sampleWx() : {days:[],now:null,alerts:[],ok:false}; }
+    if(tv) renderWx();
+  }
+  function renderWx(){
+    const W=$("tvWx"), t=today(); W.innerHTML="";
+    const N=$("tvWxNow"); N.innerHTML="";
+    if(wx.now){ N.append(h("span",{html:icon(wxKind(wx.now.short))}), h("div",null, wx.now.temp+"°", h("small",null,wx.now.short))); }
+    const A=$("tvAlert"); A.innerHTML=""; A.hidden=!wx.alerts.length;
+    if(wx.alerts.length){
+      const a=wx.alerts[0], end=a.ends?new Date(a.ends):null;
+      A.className="tvalert"+(a.winter?" winter":"");
+      A.append(...[h("span",{html:icon(a.winter?"snow":"alert"),style:"display:contents"}), a.event,
+        end&&!isNaN(end)?h("span",null,"until "+end.toLocaleString("en-US",{weekday:"short",hour:"numeric",minute:"2-digit"}).replace(":00","")):null,
+        wx.alerts.length>1?h("span",null,"· +"+(wx.alerts.length-1)+" more"):null].filter(Boolean));
+    }
+    if(!wx.ok){ W.append(h("div",{class:"wnone"},"Weather is unavailable right now.")); return; }
+    wx.days.forEach(d=>{
+      const k=wxKind(d.short), isT=ymd(d.date)===ymd(t);
+      W.append(h("div",{class:"wday "+k+(isT?" today":""),title:d.short},
+        h("b",null,isT?"Today":fmt(d.date,{weekday:"short"})),
+        h("span",{html:icon(k),style:"display:contents"}),
+        h("div",{class:"t"}, d.hi!=null?d.hi+"°":"", d.lo!=null?h("span",null,(d.hi!=null?" / ":"Low ")+d.lo+"°"):null),
+        h("small",null, k==="snow" ? "Snow"+(d.pop?" "+d.pop+"%":"") : d.pop>=20 ? d.pop+"% rain" : "")));
+    });
+    if(wx.sample) W.append(h("div",{class:"wnone",style:"position:absolute;right:1.4vw;bottom:calc(.6*var(--u));font-size:calc(1.5*var(--u))"},"Sample weather"));
+  }
+
+  // ---------- TV: rotating spotlight ----------
+  let spotIndex=0, spotTimer=null, wxTimer=null;
+  function spotSlides(){
+    const t=today(), co=tvCo, slides=[];
+    items.filter(it=>it.kind==="anniversary" && relevant(it,co)).forEach(it=>{
+      const p=personOf(it), n=daysBetween(t,parse(it.start_date)); if(p && n>=-21 && n<=7) slides.push({kind:"newhire",it,p,n});
+    });
+    const order=["shoutout","photo","review","tip"];
+    items.filter(it=>SPOT.includes(it.kind) && relevant(it,co)).sort((a,b)=>order.indexOf(a.kind)-order.indexOf(b.kind)||a.start_date.localeCompare(b.start_date)).forEach(it=>{
+      const s=parse(it.start_date), e=it.end_date?parse(it.end_date):addDays(s,13);
+      if(t<s || t>e) return;
+      const p=personOf(it); if(it.kind==="shoutout" && !p) return;
+      if(it.kind==="photo" && !it.image) return;
+      slides.push({kind:it.kind,it,p});
+    });
+    const mStart=new Date(t.getFullYear(),t.getMonth(),1), mEnd=new Date(t.getFullYear(),t.getMonth()+1,0), occM=occurrences(mStart,mEnd,co);
+    const cel=[...occM.keys()].sort().flatMap(ds=>occM.get(ds).filter(o=>o.it.kind==="birthday"||(o.it.kind==="anniversary"&&o.years>0)));
+    if(cel.length) slides.push({kind:"month",cel});
+    return slides;
+  }
+  const qsize = t => { const n=String(t||"").length; return n>200?" xlong":n>110?" long":""; };
+  const coNames = cs => (cs||[]).map(c=>(COMPANIES.find(x=>x.name===c)||{short:c}).short).join(" · ");
+  function renderSpot(){
+    const col=$("tvSpotCol"), S=$("tvSpot"), slides=spotSlides(), t=today();
+    if(slides.length) spotIndex%=slides.length; else spotIndex=0;
+    const sl=slides[spotIndex];
+    S.innerHTML=""; col.classList.remove("photo");
+    const K = sl ? (sl.kind==="newhire" ? {tv:"New to the team",icon:"wave",color:"var(--k-anniv)"} : sl.kind==="month" ? {tv:fmt(t,{month:"long"})+" celebrations",icon:"cake",color:"var(--k-bday)"} : KINDS[sl.kind]) : {tv:"Spotlight",icon:"star",color:"var(--muted)"};
+    col.style.setProperty("--kc",K.color);
+    $("spotLabel").innerHTML=icon(K.icon); $("spotLabel").append(K.tv||K.label);
+    const D=$("spotDots"); D.innerHTML=""; if(slides.length>1) slides.forEach((_,i)=>D.append(h("b",{class:i===spotIndex?"on":""})));
+    S.style.animation="none"; S.offsetHeight; S.style.animation="";
+    if(!sl){ S.append(h("div",{class:"s-empty"},h("b",null,"Nothing in the spotlight yet"),"Add a shout-out, project photo, customer review or safety tip from the calendar page, or scan the code below.")); }
+    else if(sl.kind==="shoutout"){
+      S.append(h("div",{class:"s-quote"+qsize(sl.it.title)},sl.it.title),
+        h("div",{class:"s-who"}, avatar({it:sl.it,p:sl.p}), h("div",null,h("b",null,sl.p.name), h("small",null, sl.it.author?"Thanks from "+sl.it.author:(sl.p.title||"")))));
+    } else if(sl.kind==="photo"){
+      col.classList.add("photo");
+      S.append(h("div",{class:"s-photo"}, h("img",{src:sl.it.image,alt:sl.it.title||"Project photo"}),
+        h("div",{class:"cap"}, sl.it.title?h("b",null,sl.it.title):null, (sl.it.companies||[]).length?h("small",null,coNames(sl.it.companies)):null)));
+    } else if(sl.kind==="review"){
+      S.append(h("div",{class:"stars",html:icon("star").repeat(5)}), h("div",{class:"s-quote"+qsize(sl.it.title)},sl.it.title),
+        h("div",{class:"s-who plain"}, h("div",null,h("b",null,sl.it.author||"A happy customer"), (sl.it.companies||[]).length?h("small",null,coNames(sl.it.companies)):null)));
+    } else if(sl.kind==="tip"){
+      S.append(h("div",{class:"s-tip"}, h("div",{class:"big",html:icon("shield")}), h("p",null,sl.it.title)));
+    } else if(sl.kind==="newhire"){
+      const src=imgSrc(sl.p), n=sl.n;
+      S.append(h("div",{class:"s-hire"},
+        h("div",{class:"when"}, n>0?"Starts "+relDay(parse(sl.it.start_date)):n===0?"First day today":"Joined "+fmt(parse(sl.it.start_date),{month:"short",day:"numeric"})),
+        h("div",{class:"bigav"}, src?h("img",{src,alt:""}):initials(sl.p.name)),
+        h("b",null,sl.p.name), h("p",null,[sl.p.title, coNames(sl.p.companies)].filter(Boolean).join(" · "))));
+    } else if(sl.kind==="month"){
+      const M=h("div",{class:"s-month"}); S.append(M);
+      const up=sl.cel.filter(o=>o.date>=t), past=sl.cel.filter(o=>o.date<t);
+      up.concat(past).forEach(o=>M.append(trow(o,{sm:true,when:o.date.getDate(),past:o.date<t,now:+o.date===+t,
+        sub:o.it.kind==="birthday"?"Birthday":o.years+(o.years===1?" year":" years")+" with NVE"})));
+      requestAnimationFrame(()=>clip(M));
+    }
+    const pb=$("spotProg"); pb.style.transition="none"; pb.style.width="0";
+    if(slides.length>1) requestAnimationFrame(()=>requestAnimationFrame(()=>{ pb.style.transition="width "+SPOT_SECONDS+"s linear"; pb.style.width="100%"; }));
+  }
+  function outSpan(o){
+    const w = o.it.kind==="ooo" ? (o.it.title||"Out of office") : "Out";
+    if(o.it.part_of_day) return w+(o.it.part_of_day==="am"?" · morning":" · afternoon");
+    if(+o.start===+o.end) return w;
+    return w+" through "+fmt(o.end,{weekday:"short",month:"short",day:"numeric"});
+  }
+  // Hide rows that don't fit on the screen and say how many were hidden.
+  // Hide rows that don't fit. Today's sections keep their heading with "+N more";
+  // in day lists, a day that loses all its rows drops out and is counted at the bottom.
+  function clip(box){
+    const fits=()=>box.scrollHeight<=box.clientHeight+1;
+    if(fits()) return;
+    const rows=[...box.querySelectorAll(".trow")], counts=new Map();
+    const mark=(el,n)=>{ let m=[...el.children].find(c=>c.classList.contains("tmore")); if(!m){ m=h("div",{class:"tmore"}); el.append(m); } m.textContent="+"+n+" more"; };
+    while(!fits() && rows.length){
+      const r=rows.pop(); let par=r.parentElement; r.remove();
+      if(par.classList.contains("tday") && !par.querySelector(".trow")){ const n=(counts.get(par)||0)+1; counts.delete(par); par.remove(); par=box; counts.set(box,(counts.get(box)||0)+n); }
+      else counts.set(par,(counts.get(par)||0)+1);
+      counts.forEach((n,el)=>mark(el,n));
+    }
+  }
+  function tick(){
+    const n=new Date(); let hr=n.getHours(), ap=hr>=12?"PM":"AM"; hr=hr%12||12;
+    $("tvClock").innerHTML=""; $("tvClock").append(hr+":"+pad(n.getMinutes()), h("span",null,ap));
+    const ds=ymd(today()); if(ds!==lastDay){ lastDay=ds; if(tv) render(); else renderAgenda(); }
+  }
+  setInterval(tick, 15000);
+  async function enterTV(co){
+    tv=true; tvCo=co||"All"; document.body.classList.add("tvmode"); spotIndex=0; renderTV();
+    loadWeather(); clearInterval(spotTimer); clearInterval(wxTimer);
+    spotTimer=setInterval(()=>{ spotIndex++; renderSpot(); }, SPOT_SECONDS*1000);
+    wxTimer=setInterval(loadWeather, WEATHER_MINUTES*60*1000);
+    try{ if(navigator.wakeLock) wake=await navigator.wakeLock.request("screen"); }catch(e){}
+  }
+  function exitTV(){
+    tv=false; document.body.classList.remove("tvmode"); clearInterval(spotTimer); clearInterval(wxTimer);
+    try{ wake&&wake.release(); }catch(e){} wake=null;
+    try{ if(document.fullscreenElement) document.exitFullscreen(); }catch(e){}
+    if(/[?&]tv/.test(location.search)) history.replaceState(null,"",location.pathname);
+    render();
+  }
+  $("tvBtn").onclick=()=>{ try{ document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{}); }catch(e){} enterTV(tab); };
+  $("exitTv").onclick=exitTV;
+  document.addEventListener("keydown",e=>{ if(tv&&e.key==="Escape") exitTV(); });
+  window.addEventListener("resize",()=>{ if(tv) renderTV(); });
+  function fromAddress(){
+    const q=new URLSearchParams(location.search);
+    const th=q.get("theme"); if(th==="dark"||th==="light") document.documentElement.setAttribute("data-theme",th);
+    if(q.has("add")){ fromPhone=true; pendingAdd=q.get("add")||"out"; }
+    if(!q.has("tv")) return;
+    const want=(q.get("tv")||"").toLowerCase(), c=COMPANIES.find(c=>c.hash===want);
+    enterTV(c?c.name:"All");
+    setTimeout(()=>location.reload(), 12*60*60*1000);   // fresh page twice a day on unattended TVs
+  }
+
+  // ---------- form ----------
+  let editing=null, kind="out", fromPhone=false, pendingAdd=null;
+  // To add another type later: add it to KINDS above (and to the kind list in calendar-setup.sql). The dropdown fills itself.
+  KIND_GROUPS.forEach(([g,ks])=>{ const og=h("optgroup",{label:g}); ks.forEach(k=>og.append(new Option(KINDS[k].label,k))); $("fKind").append(og); });
+  $("fKind").onchange=()=>{ kind=$("fKind").value; shape(); };
+  COMPANIES.forEach((c,i)=>$("fCos").append(h("label",null,h("input",{type:"checkbox",value:c.name}),c.name,h("span",{class:"sw",style:"background:"+c.color}))));
+  MONTHS.forEach((m,i)=>$("fMonth").append(new Option(m,String(i+1))));
+  function fillDays(keep){
+    const m=Number($("fMonth").value), n=[31,29,31,30,31,30,31,31,30,31,30,31][m-1], sel=$("fDay"), cur=keep||sel.value;
+    sel.innerHTML=""; for(let d=1; d<=n; d++) sel.append(new Option(String(d),String(d)));
+    sel.value = Number(cur)>n ? String(n) : (cur||"1");
+  }
+  $("fMonth").onchange=()=>fillDays();
+  function fillPeoplePick(){
+    const box=$("fPeople"); box.innerHTML="";
+    people.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(p=>box.append(h("label",null,h("input",{type:"checkbox",value:p.id}),p.name)));
+  }
+  let newImage=null;
+  function setThumb(url){ $("thumb").style.backgroundImage=url?'url("'+url.replace(/"/g,"%22")+'")':""; $("dropText").textContent=url?"Choose or drop to replace":"Choose or drop a photo"; }
+  function shrink(file){
+    return new Promise((ok,bad)=>{
+      const u=URL.createObjectURL(file), im=new Image();
+      im.onload=()=>{ URL.revokeObjectURL(u);
+        for(const [max,q] of [[1600,.82],[1400,.8],[1200,.78],[1000,.75],[800,.72]]){
+          const sc=Math.min(1,max/Math.max(im.width,im.height)), cv=document.createElement("canvas");
+          cv.width=Math.round(im.width*sc); cv.height=Math.round(im.height*sc);
+          const cx=cv.getContext("2d"); cx.fillStyle="#ffffff"; cx.fillRect(0,0,cv.width,cv.height); cx.drawImage(im,0,0,cv.width,cv.height);
+          const d=cv.toDataURL("image/jpeg",q); if(d.length<650000) return ok(d);
+        }
+        bad(new Error("That photo is too detailed to store. Try a smaller file."));
+      };
+      im.onerror=()=>{ URL.revokeObjectURL(u); bad(new Error("That photo couldn't be read. Try a JPG or PNG.")); };
+      im.src=u;
+    });
+  }
+  async function pick(file){
+    if(!file || !/^image\//.test(file.type)){ $("fErr").textContent="Choose an image file, such as a JPG or PNG."; return; }
+    $("fErr").textContent=""; $("save").disabled=true;
+    try{ newImage=await shrink(file); setThumb(newImage); }catch(e){ $("fErr").textContent=e.message; }
+    $("save").disabled=false;
+  }
+  $("drop").onclick=()=>$("fFile").click();
+  $("fFile").onchange=e=>{ pick(e.target.files[0]); e.target.value=""; };
+  ["dragenter","dragover"].forEach(t=>$("drop").addEventListener(t,e=>{ e.preventDefault(); $("drop").classList.add("over"); }));
+  ["dragleave","drop"].forEach(t=>$("drop").addEventListener(t,e=>{ e.preventDefault(); $("drop").classList.remove("over"); }));
+  $("drop").addEventListener("drop",e=>pick(e.dataTransfer.files[0]));
+  function fillPeople(sel){
+    const s=$("fPerson"); s.innerHTML=""; s.append(new Option(kind==="other"?"No one in particular":"Choose a person…",""));
+    people.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(p=>s.append(new Option(p.name+(p.title?" — "+p.title:""),String(p.id))));
+    if(sel && !byId.has(String(sel))) s.append(new Option("(No longer on the team board)",String(sel)));
+    s.value=sel?String(sel):"";
+  }
+  function shape(){
+    const per=PERSON_KINDS.includes(kind), K=KINDS[kind];
+    $("fKind").value=kind; $("fKindIc").style.setProperty("--kc",K.color); $("fKindIc").innerHTML=icon(K.icon);
+    const keep=$("fPerson").value; fillPeople(keep);   // relabels the first option for "Other"
+    const spot=SPOT.includes(kind), multi=kind==="oncall"&&!editing;
+    $("wPerson").hidden=!((per&&!multi)||kind==="other"||kind==="shoutout"); $("wPeople").hidden=!multi;
+    $("wTitle").hidden=["birthday","anniversary","shoutout","review","tip"].includes(kind);
+    $("lPerson").innerHTML = kind==="other" ? 'Who <small>optional</small>' : kind==="shoutout" ? "Who it's for" : "Who";
+    $("lTitle").innerHTML = {out:"Note <small>optional</small>", ooo:"Where or why <small>optional</small>", holiday:"Holiday name", event:"Event name", other:"Name it",
+      oncall:"Rotation <small>optional</small>", photo:"Caption <small>optional</small>"}[kind]||"Name";
+    $("fTitle").placeholder = {out:"e.g. Vacation", ooo:"e.g. Training, job site, working remote", holiday:"e.g. Thanksgiving — office closed", event:"e.g. All-company safety meeting",
+      other:"Type what it is, e.g. Uniform orders due", oncall:"e.g. Snow crew A", photo:"e.g. Bluestone patio in Chagrin Falls"}[kind]||"";
+    $("wMsg").hidden=!["shoutout","review","tip"].includes(kind);
+    $("lMsg").textContent = {shoutout:"Your shout-out", review:"What the customer said", tip:"The tip"}[kind]||"Message";
+    $("fMsg").placeholder = {shoutout:"e.g. Thanks for covering my route Saturday!", review:"Paste or type the review", tip:"e.g. Walk around the truck before you back up."}[kind]||"";
+    $("wAuthor").hidden=!(kind==="shoutout"||kind==="review");
+    $("lAuthor").innerHTML = kind==="review" ? 'Customer <small>optional, e.g. first name and town</small>' : 'From <small>optional</small>';
+    $("fAuthor").placeholder = kind==="review" ? "e.g. Karen M., Solon" : "Your name";
+    $("wImage").hidden=kind!=="photo";
+    $("hAnniv").hidden=kind!=="anniversary";
+    if(spot && !editing && !$("fEnd").value && $("fStart").value) $("fEnd").value=ymd(addDays(parse($("fStart").value),13));
+    $("wBday").hidden=$("hBday").hidden=kind!=="birthday";
+    $("wDates").hidden=kind==="birthday";
+    $("lStart").textContent = kind==="anniversary" ? "Start date at NVE" : spot ? "Show on TVs from" : (AWAY(kind)||kind==="holiday"||kind==="oncall") ? "From" : "Date";
+    $("wEnd").hidden=kind==="anniversary";
+    $("lEnd").innerHTML = spot ? "Until" : "Through <small>optional</small>";
+    const single=!$("fEnd").value || $("fEnd").value===$("fStart").value;
+    $("wHalf").hidden=!(AWAY(kind)&&single);
+    $("wTime").hidden=!(kind==="event"||kind==="other");
+    $("wCos").hidden=!["event","holiday","other","photo","review","tip"].includes(kind);
+    $("lCos").innerHTML = spot ? "Which TVs <small>leave all unticked for every TV</small>" : "Who it's for <small>leave all unticked for everyone</small>";
+    $("hOut").hidden=!AWAY(kind);
+    $("hOut").textContent = kind==="out" ? "TVs show the person as out and when they're back. The note stays on this screen only."
+      : "Use this when someone is working but not in the building. TVs show the note, so keep it work-related.";
+    $("fErr").textContent="";
+  }
+  $("fEnd").oninput=$("fStart").oninput=shape;
+  function openForm(it, ds, preset){
+    editing=it||null;
+    kind = it&&KINDS[it.kind] ? it.kind : (preset&&KINDS[preset] ? preset : "out");
+    newImage=null; setThumb(it&&it.image||""); fillPeoplePick();
+    $("fMsg").value = it&&["shoutout","review","tip"].includes(it.kind) ? (it.title||"") : "";
+    $("fAuthor").value = it&&it.author || "";
+    $("dlgTitle").textContent = it ? "Edit "+KINDS[it.kind].label.toLowerCase() : SPOT.includes(kind) ? "Add to the TV spotlight" : "Add to calendar";
+    fillPeople(it&&it.person_id);
+    $("fTitle").value = it&&!["shoutout","review","tip"].includes(it.kind) ? (it.title||"") : "";
+    const sd = it ? parse(it.start_date) : (ds?parse(ds):today());
+    $("fMonth").value=String(sd.getMonth()+1); fillDays(String(sd.getDate()));
+    $("fStart").value = it ? String(it.start_date).slice(0,10) : (ds||ymd(today()));
+    $("fEnd").value = it&&it.end_date ? String(it.end_date).slice(0,10) : "";
+    $("fTime").value = it&&it.start_time || "";
+    $("fHalf").querySelectorAll("input").forEach(i=>i.checked=i.value===((it&&it.part_of_day)||""));
+    $("fCos").querySelectorAll("input").forEach(i=>i.checked=!!(it&&(it.companies||[]).includes(i.value)) || (!it && tab!=="All" && i.value===tab));
+    $("delBtn").hidden=!it; $("confirmDel").hidden=true; $("save").disabled=false; $("save").textContent="Save";
+    shape(); $("dlg").showModal();
+  }
+  $("addBtn").onclick=()=>openForm(null);
+  $("cancel").onclick=()=>$("dlg").close();
+  function friendly(e){
+    const m=String(e&&e.message||"");
+    if(/person_required/.test(m)) return "Choose who this is for.";
+    if(/title_required/.test(m)) return "Give it a name.";
+    if(/date_required/.test(m)) return "Pick a date.";
+    if(/end_before_start/.test(m)) return "The end date is before the start date.";
+    if(/too_long/.test(m)) return "That's longer than 120 days. Split it into shorter stretches.";
+    if(/not_found/.test(m)) return "Someone else already removed this. Reload to see the latest.";
+    if(/image_required/.test(m)) return "Add a photo.";
+    if(/bad_image/.test(m)) return "That photo couldn't be saved. Try a different JPG or PNG.";
+    if(/p_author|p_image|bad_kind|cal_items_kind_check/.test(m)) return "This needs the v2 database update. Run calendar-upgrade-v2.sql in Supabase, then try again.";
+    if(/Could not find the function|PGRST202|cal_items/i.test(m)) return "The calendar database isn't set up yet. Run calendar-setup.sql in Supabase first.";
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) return "Couldn't reach the calendar. Check your internet connection and try again.";
+    return m||"Something went wrong. Try again.";
+  }
+  $("form").addEventListener("submit", async ev=>{
+    ev.preventDefault();
+    const per=PERSON_KINDS.includes(kind)||kind==="shoutout", err=t=>{ $("fErr").textContent=t; };
+    const msgKind=["shoutout","review","tip"].includes(kind), multi=kind==="oncall"&&!editing;
+    const person=$("fPerson").value, title=(msgKind?$("fMsg").value:$("fTitle").value).trim();
+    const crew=multi?[...$("fPeople").querySelectorAll("input:checked")].map(i=>i.value):[];
+    let start, end=null;
+    if(kind==="birthday") start="2000-"+pad($("fMonth").value)+"-"+pad($("fDay").value);
+    else { start=$("fStart").value; end=kind==="anniversary"?null:($("fEnd").value||null); }
+    if(multi && !crew.length) return err("Tick at least one person who's on call.");
+    if(per && !multi && !person) return err(kind==="shoutout"?"Choose who the shout-out is for.":"Choose who this is for.");
+    if(msgKind && !title) return err({shoutout:"Write the shout-out.", review:"Add what the customer said.", tip:"Write the tip."}[kind]);
+    if(["holiday","event","other"].includes(kind) && !title) return err(kind==="holiday"?"Give the holiday a name.":kind==="other"?"Type what it is.":"Give the event a name.");
+    if(kind==="photo" && !newImage && !(editing&&editing.image)) return err("Add a photo.");
+    if(!start) return err(kind==="anniversary"?"Pick the date they started.":"Pick a date.");
+    if(end && end<start) return err("The end date is before the start date.");
+
+    if(kind==="birthday"){ const dup=items.find(x=>x.kind==="birthday"&&String(x.person_id)===person&&(!editing||x.id!==editing.id)); if(dup) return err("This person already has a birthday saved. Edit that one instead."); }
+    if(kind==="anniversary"){ const dup=items.find(x=>x.kind==="anniversary"&&String(x.person_id)===person&&(!editing||x.id!==editing.id)); if(dup) return err("This person already has a start date saved. Edit that one instead."); }
+    const half=(($("fHalf").querySelector("input:checked")||{}).value)||"";
+    const cos=[...$("fCos").querySelectorAll("input:checked")].map(i=>i.value);
+    $("save").disabled=true; $("save").textContent="Saving…"; err("");
+    try{
+      const base={ p_id:editing?editing.id:null, p_kind:kind, p_person_id:(per||kind==="other")?(person||null):null,
+        p_title:(kind==="birthday"||kind==="anniversary")?null:(title||null),
+        p_author:(kind==="shoutout"||kind==="review")?($("fAuthor").value.trim()||null):null,
+        p_image:kind==="photo"?(newImage||null):null,
+        p_start_date:start, p_end_date:end&&end!==start?end:null,
+        p_part_of_day:AWAY(kind)&&(!end||end===start)?(half||null):null,
+        p_start_time:(kind==="event"||kind==="other")?($("fTime").value.trim()||null):null,
+        p_companies:["event","holiday","other","photo","review","tip"].includes(kind)?cos:[] };
+      if(multi){ for(const id of crew) await api.save({...base, p_person_id:id}); } else await api.save(base);
+      $("dlg").close(); await refresh(true);
+      if(fromPhone) note("Saved. The TVs will show it within a minute.");
+    }catch(e){ err(friendly(e)); $("save").disabled=false; $("save").textContent="Save"; }
+  });
+  $("delBtn").onclick=()=>{ $("confirmDel").hidden=false; };
+  $("noDel").onclick=()=>{ $("confirmDel").hidden=true; };
+  $("yesDel").onclick=async()=>{
+    if(!editing) return; $("yesDel").disabled=true;
+    try{ await api.remove(editing.id); $("dlg").close(); await refresh(true); }catch(e){ $("fErr").textContent=friendly(e); }
+    $("yesDel").disabled=false;
+  };
+
+  // ---------- recently removed ----------
+  function renderBin(){
+    const l=$("binList"); l.innerHTML=""; $("binErr").textContent="";
+    if(!removed.length){ l.append(h("div",{class:"quiet-line"},"Nothing has been removed recently.")); return; }
+    removed.slice().sort((a,b)=>String(b.deleted_at).localeCompare(String(a.deleted_at))).forEach(it=>{
+      const p=personOf(it), b=h("button",{type:"button",class:"btn ghost"},"Restore");
+      b.onclick=async()=>{ b.disabled=true; try{ await api.restore(it.id); await refresh(true); renderBin(); }catch(e){ $("binErr").textContent=friendly(e); b.disabled=false; } };
+      const when = it.kind==="birthday" ? fmt(parse(it.start_date),{month:"short",day:"numeric"}) : fmt(parse(it.start_date),{month:"short",day:"numeric",year:"numeric"});
+      l.append(h("div",{class:"binrow"}, h("div",{class:"who"}, h("b",null,(p?p.name:(it.title||"").slice(0,60))||KINDS[it.kind].label), h("span",null,KINDS[it.kind].label+" · "+when)), b));
+    });
+  }
+  $("binBtn").onclick=()=>{ renderBin(); $("binDlg").showModal(); };
+  $("binClose").onclick=()=>$("binDlg").close();
+
+  // ---------- load & watch for changes ----------
+  function clean(r){ return { id:r.id, kind:r.kind, person_id:r.person_id!=null?String(r.person_id):null, title:r.title||null,
+    start_date:String(r.start_date).slice(0,10), end_date:r.end_date?String(r.end_date).slice(0,10):null, part_of_day:r.part_of_day||null,
+    start_time:r.start_time||null, companies:Array.isArray(r.companies)?r.companies:[], author:r.author||null,
+    image:typeof r.image==="string"&&r.image.indexOf("data:image/")===0?r.image:null, deleted_at:r.deleted_at||null }; }
+  async function refresh(force){
+    try{
+      if(!force && loaded){ const v=await api.version(); if(v===lastVersion) return; lastVersion=v; }
+      else { try{ lastVersion=await api.version(); }catch(e){} }
+      let ppl, rows;
+      try{ [ppl, rows] = await Promise.all([api.people(), api.items()]); }
+      catch(e){
+        // Board is live but the calendar table hasn't been created yet: show sample dates so the page can be previewed.
+        if(mode==="live" && (e.status===404 || /PGRST205|cal_items/.test(String(e.code)+e.message))){ mode="setup"; sampleSet=sample(); return refresh(true); }
+        throw e;
+      }
+      if(mode==="setup"){ ppl = sampleSet.people; }
+      people=(ppl||[]).filter(p=>p&&p.name&&!p.deleted_at).map(p=>({...p,id:String(p.id),companies:Array.isArray(p.companies)?p.companies:[]}));
+      byId=new Map(people.map(p=>[p.id,p]));
+      const all=(rows||[]).map(clean); items=all.filter(x=>!x.deleted_at); removed=all.filter(x=>x.deleted_at);
+      $("binBtn").hidden=!removed.length; $("binBtn").textContent="Recently removed ("+removed.length+")";
+      loaded=true;
+      if(pendingAdd!==null){ const k=pendingAdd; pendingAdd=null; history.replaceState(null,"",location.pathname); openForm(null,null,k); }
+      if(mode==="demo") note("Demo mode with sample people and dates. Changes aren't saved.");
+      else if(mode==="setup") note("Preview with sample dates. To go live, run calendar-setup.sql once in Supabase (SQL Editor), then reload. Real names and photos come from the Team Board.");
+      else if(needsUpgrade) note("Almost there: run calendar-upgrade-v2.sql in Supabase to turn on on-call and the TV spotlight.");
+      else if(!fromPhone) note("");
+      render();
+    }catch(e){
+      if(!loaded){ loaded=true; render(); note("Couldn't load the calendar. Check the internet connection, then reload.", true); }
+    }
+  }
+  if(DEMO) sampleSet=sample();
+  renderKey(); renderLinks(); render(); fromAddress(); refresh(true);
+  if(!tv) loadWeather();
+  setInterval(()=>{ if(!document.querySelector("dialog[open]")) refresh(false); }, CHECK_SECONDS*1000);
+})();
+</script>
+</body>
+</html>
