@@ -125,7 +125,6 @@ body.tv .progress{display:block}
 <style>
 [hidden]{display:none!important}
 html{color-scheme:light}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .codehint{color:var(--muted);font-size:13.5px;margin:-6px 0 0;line-height:1.45}
 .binlist{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow:auto}
 .binrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
@@ -136,23 +135,6 @@ html{color-scheme:light}
 .foot{display:flex;justify-content:center;margin-top:28px}
 .linkbtn{background:none;border:0;color:var(--muted);font-weight:600;font-size:13.5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:6px}
 body.tv .foot{display:none}
-.dv{font-size:calc(var(--fs,1)*11px);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-top:4px;line-height:1.3}
-.node .dv{font-size:10.5px}
-.role+.role{margin-top:6px}
-.roles-f{display:flex;flex-direction:column;gap:8px}
-.rrow{display:grid;grid-template-columns:1fr 1.3fr auto;gap:8px;align-items:center}
-.rrow .x{width:36px;height:40px;border:1px solid var(--line);background:transparent;border-radius:10px;cursor:pointer;font-size:18px;line-height:1;color:var(--muted)}
-.rrow .x:hover{color:var(--danger);border-color:var(--danger)}
-.rhead{display:grid;grid-template-columns:1fr 1.3fr 36px;gap:8px;font-size:12px;color:var(--muted);font-weight:600}
-.addrole{align-self:flex-start;background:none;border:0;color:var(--accent);font-weight:700;font-size:14px;cursor:pointer;padding:4px 0}
-@media (max-width:560px){
-  .rrow{grid-template-columns:1fr auto;grid-template-areas:"d x" "t x";padding:8px;border:1px solid var(--line);border-radius:12px}
-  .rrow .rd{grid-area:d} .rrow .rt{grid-area:t} .rrow .x{grid-area:x;align-self:center}
-  .rhead{display:none}
-}
-.confirm{flex-direction:column;align-items:stretch}
-.confirm .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.confirm .in{flex:1;min-width:160px;background:var(--surface);color:var(--ink)}
 /* view switch */
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px;background:var(--bg)}
 .seg button{border:0;background:transparent;padding:6px 12px;border-radius:7px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--muted)}
@@ -196,6 +178,62 @@ body.tv .chartwrap{overflow:hidden;width:100%;height:100%;display:flex;align-ite
 body.tv .tree{min-width:0;transform-origin:center center}
 body.tv .orgsec{margin:0;width:100%;height:100%}
 body.tv .orgsec h3{display:none}
+/* ---- v2: status, license, details popup ---- */
+:root{--st-bday:#c4532d;--st-anniv:#9a7414;--st-out:#5d6c74;--st-ooo:#6b4fa0;--st-call:#0e7c86;--st-ink:#ffffff}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--st-bday:#f08a63;--st-anniv:#d8b04a;--st-out:#a9b7be;--st-ooo:#b39ae0;--st-call:#5cc8d0;--st-ink:#101512} }
+:root[data-theme="dark"]{--st-bday:#f08a63;--st-anniv:#d8b04a;--st-out:#a9b7be;--st-ooo:#b39ae0;--st-call:#5cc8d0;--st-ink:#101512}
+.ic{width:1em;height:1em;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+a.btn{text-decoration:none}
+.card.click,.node.click{cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.card.click:hover,.node.click:hover{transform:translateY(-2px)}
+@media (prefers-reduced-motion:reduce){ .card.click,.node.click{transition:none} .card.click:hover,.node.click:hover{transform:none} }
+.pic{position:relative}
+.card.st{box-shadow:0 0 0 calc(var(--fs,1)*2.5px) var(--sc),var(--shadow)}
+.card .info{flex:1}
+.card.st .info{background:color-mix(in srgb,var(--sc) 10%,var(--surface))}
+.node.st{box-shadow:0 0 0 2.5px var(--sc),var(--shadow);background:color-mix(in srgb,var(--sc) 8%,var(--surface))}
+.stat{position:absolute;top:8px;left:8px;right:8px;display:flex;flex-wrap:wrap;gap:4px;z-index:1;pointer-events:none}
+.stat span{display:inline-flex;align-items:center;gap:5px;background:var(--c);color:var(--st-ink);font-size:calc(var(--fs,1)*11.5px);font-weight:800;line-height:1;padding:calc(var(--fs,1)*5px) calc(var(--fs,1)*9px) calc(var(--fs,1)*5px) calc(var(--fs,1)*7px);border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.stat .ic{font-size:1.15em;stroke-width:2.4}
+.node .stat{top:-12px;left:0;right:0;justify-content:center}
+.node .stat span{padding:5px;font-size:12px}
+.node .stat span b{display:none}
+.nmrow{display:flex;align-items:flex-start;gap:6px}
+.nmrow .nm{flex:1;min-width:0}
+.node .nmrow{justify-content:center}
+.node .nmrow .nm{flex:0 1 auto}
+.lic{flex:none;display:inline-flex;align-items:center;justify-content:center;width:calc(var(--fs,1)*22px);height:calc(var(--fs,1)*22px);border-radius:6px;background:var(--sunk);color:var(--ink);font-size:calc(var(--fs,1)*14px)}
+.node .lic{width:20px;height:20px;font-size:13px}
+.pic .lic{position:absolute;right:8px;bottom:8px;background:var(--surface);box-shadow:var(--shadow)}
+.dv{color:var(--muted);font-size:calc(var(--fs,1)*12.5px);font-weight:700;margin-top:3px}
+.node .dv{font-size:11.5px}
+/* details popup */
+.view{padding:22px;display:flex;flex-direction:column;gap:16px}
+.vtop{display:flex;gap:18px;align-items:flex-start}
+.vpic{width:128px;aspect-ratio:4/5;max-width:100%;border-radius:12px;overflow:hidden;background:var(--sunk);flex:none;display:flex;align-items:center;justify-content:center}
+.vpic img{width:100%;height:100%;object-fit:cover;display:block}
+.vpic.full{width:180px;aspect-ratio:auto;background:transparent;box-shadow:var(--shadow)}
+.vpic.full img{height:auto;object-fit:contain}
+.vpic .ini{font-size:40px}
+.vhead{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}
+.vhead h2{font-family:var(--display);font-size:26px;margin:0;line-height:1.1;overflow-wrap:anywhere;display:flex;align-items:center;gap:8px}
+.vhead h2 .lic{width:26px;height:26px;font-size:16px}
+.vhead .vfull{color:var(--muted);font-size:14px;margin:0}
+.vhead .vttl{font-size:15.5px;font-weight:700;margin:6px 0 0}
+.vhead .vdiv{color:var(--muted);font-size:14px;font-weight:600;margin:0}
+.vhead .chips{margin-top:8px}
+.vstat{display:flex;flex-direction:column;gap:6px}
+.vstat div{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--c) 13%,var(--surface));font-weight:600;font-size:14px}
+.vstat .ic{color:var(--c);font-size:18px}
+.facts{display:grid;grid-template-columns:max-content 1fr;gap:9px 18px;margin:0;font-size:14.5px;padding-top:14px;border-top:1px solid var(--line)}
+.facts dt{color:var(--muted);font-weight:600}
+.facts dd{margin:0;font-weight:600;min-width:0;overflow-wrap:anywhere}
+.facts dd small{color:var(--muted);font-weight:500}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bday{display:grid;grid-template-columns:1.5fr 1fr;gap:6px}
+.hint{color:var(--muted);font-size:13px;margin:-6px 0 0;line-height:1.45}
+.fld input:disabled,.fld select:disabled{opacity:.55}
+@media (max-width:560px){ .brand{flex-basis:100%} .vtop{flex-direction:column} .two{grid-template-columns:1fr} .facts{grid-template-columns:1fr;gap:2px} .facts dd{margin-bottom:8px} }
 </style>
 </head>
 <body>
@@ -203,6 +241,7 @@ body.tv .orgsec h3{display:none}
   <div class="bar">
     <div class="brand"><h1>New Vista Enterprises Team</h1><p>Everyone across our four companies</p></div>
     <div class="seg" role="group" aria-label="View"><button type="button" id="vTiles" aria-pressed="true">Tiles</button><button type="button" id="vChart" aria-pressed="false">Org chart</button></div>
+    <a class="btn ghost" id="calLink" href="calendar.html">Calendar</a>
     <button class="btn ghost" id="tvBtn" type="button">TV mode</button>
     <button class="btn" id="addBtn" type="button">+ Add person</button>
   </div>
@@ -225,16 +264,31 @@ body.tv .orgsec h3{display:none}
 </dialog>
 
 <dialog id="dlg" aria-labelledby="dlgTitle">
+  <div class="view" id="view" hidden>
+    <div class="vtop">
+      <div class="vpic" id="vPic"></div>
+      <div class="vhead"><h2 id="vName"></h2><p class="vfull" id="vFull"></p><p class="vttl" id="vTitle"></p><p class="vdiv" id="vDiv"></p><div class="chips" id="vChips"></div></div>
+    </div>
+    <div class="vstat" id="vStat"></div>
+    <dl class="facts" id="vFacts"></dl>
+    <div class="actions"><a class="btn ghost" href="calendar.html">Open calendar</a><span class="sp"></span><button class="btn ghost" type="button" id="vClose">Close</button><button class="btn" type="button" id="vEdit">Edit</button></div>
+  </div>
   <form class="dlg" id="form" novalidate>
     <h2 id="dlgTitle">Add person</h2>
-    <div class="fld"><label for="fName">Name</label><input class="in" id="fName" maxlength="80" autocomplete="off"></div>
-    <div class="fld"><span>Roles <small>optional — add one row for each division and title this person holds</small></span>
-      <div class="rhead" aria-hidden="true"><span>Division</span><span>Position / title</span><span></span></div>
-      <div class="roles-f" id="fRoles"></div>
-      <button class="addrole" type="button" id="addRole">+ Add another role</button>
+    <div class="two">
+      <div class="fld"><label for="fName">Listed name <small>shown on the board</small></label><input class="in" id="fName" maxlength="80" autocomplete="off" placeholder="e.g. Mike"></div>
+      <div class="fld"><label for="fFull">Actual name <small>optional</small></label><input class="in" id="fFull" maxlength="120" autocomplete="off" placeholder="e.g. Michael Russo"></div>
     </div>
+    <div class="fld"><label for="fTitle">Position / title</label><input class="in" id="fTitle" maxlength="120" autocomplete="off"></div>
+    <div class="fld"><label for="fDiv">Division <small>optional</small></label><input class="in" id="fDiv" maxlength="80" autocomplete="off" list="divList" placeholder="e.g. Snow & Ice, Maintenance, Install"><datalist id="divList"></datalist></div>
     <div class="fld"><span>Works for</span><div class="cos" id="fCos"></div></div>
     <div class="fld"><label for="fBoss">Reports to</label><select class="in" id="fBoss"></select></div>
+    <div class="two">
+      <div class="fld"><span>Birthday <small>optional, no year</small></span><div class="bday"><select class="in" id="fBM" aria-label="Birthday month"></select><select class="in" id="fBD" aria-label="Birthday day"></select></div></div>
+      <div class="fld"><label for="fStart">Start date at NVE <small>optional</small></label><input class="in" id="fStart" type="date"></div>
+    </div>
+    <p class="hint" id="hDates">These also feed the office calendar. On the board, the dates only show when someone opens this person.</p>
+    <label class="opt"><input type="checkbox" id="fLic"> Has a driver's license</label>
     <div class="fld"><span>Photo or employee card</span>
       <button class="drop" id="drop" type="button"><span class="thumb" id="thumb"></span><span><b id="dropText">Choose or drop an image</b><small>JPG or PNG. Big files are resized for you.</small></span></button>
       <input type="file" id="fFile" accept="image/*" hidden>
@@ -243,7 +297,7 @@ body.tv .orgsec h3{display:none}
     <label class="opt" id="rmWrap" hidden><input type="checkbox" id="fRemove"> Remove the current image</label>
     <div class="fld"><label for="fSort">Sort order <small>optional, lower numbers show first</small></label><input class="in" id="fSort" type="number" step="1" style="max-width:140px"></div>
     <p class="err-line" id="fErr" role="alert"></p>
-    <div class="confirm" id="confirmDel" hidden><span>Removing someone needs the password. They can be restored for 30 days.</span><div class="row"><label for="delPw" class="sr">Password</label><input class="in" id="delPw" type="password" autocomplete="off" placeholder="Password"><button class="btn ghost" type="button" id="noDel">Cancel</button><button class="btn danger" type="button" id="yesDel">Remove</button></div></div>
+    <div class="confirm" id="confirmDel" hidden>Remove this person? You can restore them for 30 days.<span style="flex:1"></span><button class="btn ghost" type="button" id="noDel">Keep</button><button class="btn danger" type="button" id="yesDel">Remove</button></div>
     <div class="actions">
       <button class="btn quiet" type="button" id="delBtn" hidden>Remove person</button><span class="sp"></span>
       <button class="btn ghost" type="button" id="cancel">Cancel</button><button class="btn" type="submit" id="save">Save</button>
@@ -274,14 +328,46 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
   const BY = Object.fromEntries(COMPANIES.map(c=>[c.name,c]));
   const DEMO = !SUPABASE_URL || !SUPABASE_KEY;
 
+  // ---------- dates & icons ----------
+  const pad=n=>String(n).padStart(2,"0");
+  const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  const parseD=s=>{ const [y,m,d]=String(s).slice(0,10).split("-").map(Number); return new Date(y,m-1,d); };
+  const addDays=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+  const today=()=>{ const n=new Date(); return new Date(n.getFullYear(),n.getMonth(),n.getDate()); };
+  const isLeap=y=>(y%4===0&&y%100!==0)||y%400===0;
+  const fmtD=(d,o)=>d.toLocaleDateString("en-US",o);
+  const MONTHS=Array.from({length:12},(_,i)=>fmtD(new Date(2000,i,1),{month:"long"}));
+  const ICONS={
+    cake:'<path d="M4 21h16M5 21v-7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7M5 16c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0M12 12V8M12 5.5c.8-.8.8-1.7 0-2.5-.8.8-.8 1.7 0 2.5z"/>',
+    star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+    away:'<path d="M3 12h12M11 7l5 5-5 5M20 4v16"/>',
+    brief:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>',
+    bell:'<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/>',
+    wave:'<path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V10M10 9.5V4a1.5 1.5 0 0 1 3 0v6M13 9V5.5a1.5 1.5 0 0 1 3 0V12M16 10a1.5 1.5 0 0 1 3 0v4a7 7 0 0 1-7 7h-1a6 6 0 0 1-5-2.7L3.5 15a1.5 1.5 0 0 1 2.5-1.6L7 15"/>',
+    car:'<path d="M4 16v-3.5L6 7.5A2 2 0 0 1 7.9 6h8.2a2 2 0 0 1 1.9 1.5l2 5V16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM4.5 12.5h15"/><circle cx="7.5" cy="14.5" r=".6"/><circle cx="16.5" cy="14.5" r=".6"/><path d="M6 17v2M18 17v2"/>'
+  };
+  const icon=k=>'<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+ICONS[k]+'</svg>';
+
   // ---------- data layer ----------
+  const t0=today(), dd=n=>ymd(addDays(t0,n)), md=n=>{ const x=addDays(t0,n); return "2000-"+pad(x.getMonth()+1)+"-"+pad(x.getDate()); };
   let demo = [
-    {id:"d1",name:"Sample Owner",title:"President & CEO",companies:COMPANIES.map(c=>c.name),image:null,image_is_card:false,sort:1,reports_to:null},
-    {id:"d2",name:"Sample Designer",title:"Landscape Designer",companies:["New Vista"],image:null,image_is_card:false,sort:null,reports_to:"d1"},
-    {id:"d3",name:"Sample Account Manager",title:"Account Manager",companies:["Green Estates"],image:null,image_is_card:false,sort:null,reports_to:"d5"},
-    {id:"d4",name:"Sample Technician",title:"Lawn Care Technician",companies:["Dura Lawn"],image:null,image_is_card:false,sort:null,reports_to:"d1"},
-    {id:"d5",name:"Sample Yard Manager",title:"Yard Manager",companies:["Buckeye Outdoor Supply","Green Estates"],image:null,image_is_card:false,sort:null,reports_to:"d1"}
+    {id:"d1",name:"Sample Owner",full_name:"Samuel J. Owner",title:"President & CEO",division:null,has_license:true,companies:COMPANIES.map(c=>c.name),image:null,image_is_card:false,sort:1,reports_to:null},
+    {id:"d2",name:"Sam",full_name:"Samantha Designer",title:"Landscape Designer",division:"Design",has_license:true,companies:["New Vista"],image:null,image_is_card:false,sort:null,reports_to:"d1"},
+    {id:"d3",name:"Sample Account Manager",full_name:null,title:"Account Manager",division:"Commercial Maintenance",has_license:true,companies:["Green Estates"],image:null,image_is_card:false,sort:null,reports_to:"d5"},
+    {id:"d4",name:"Sample Technician",full_name:null,title:"Lawn Care Technician",division:"Lawn Care",has_license:false,companies:["Dura Lawn"],image:null,image_is_card:false,sort:null,reports_to:"d1"},
+    {id:"d5",name:"Sample Yard Manager",full_name:null,title:"Yard Manager",division:"Yard & Delivery",has_license:true,companies:["Buckeye Outdoor Supply","Green Estates"],image:null,image_is_card:false,sort:null,reports_to:"d1"},
+    {id:"d6",name:"Sample Crew Lead",full_name:null,title:"Crew Lead",division:"Snow & Ice",has_license:false,companies:["Green Estates"],image:null,image_is_card:false,sort:null,reports_to:"d5"}
   ];
+  let demoCal = [
+    {id:"c1",kind:"birthday",person_id:"d2",start_date:md(0)},
+    {id:"c2",kind:"out",person_id:"d3",start_date:dd(0),end_date:dd(1)},
+    {id:"c3",kind:"oncall",person_id:"d6",title:"Snow crew A",start_date:dd(-1),end_date:dd(5)},
+    {id:"c4",kind:"ooo",person_id:"d4",title:"Training in Columbus",start_date:dd(0)},
+    {id:"c5",kind:"anniversary",person_id:"d1",start_date:"2012-03-12"},
+    {id:"c6",kind:"birthday",person_id:"d1",start_date:"2000-07-22"},
+    {id:"c7",kind:"anniversary",person_id:"d2",start_date:"2021-04-05"},
+    {id:"c8",kind:"out",person_id:"d2",start_date:dd(6),end_date:dd(8)}
+  ].map(x=>({title:null,end_date:null,part_of_day:null,...x}));
   const base = SUPABASE_URL.replace(/\/+$/,"").replace(/\/rest\/v1$/,"");
   async function rest(path, opts={}){
     const res = await fetch(base + "/rest/v1/" + path, {
@@ -294,20 +380,45 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     if(!res.ok){ const err = new Error((data && (data.message||data.hint)) || ("HTTP "+res.status)); err.status=res.status; throw err; }
     return data;
   }
+  // calOk: the office calendar's table exists (birthdays, start dates, who's out).
+  // extrasOk: org-chart-upgrade.sql has been run (actual name, division, driver's license).
+  let calOk=null, extrasOk=null;
+  const PEOPLE="people?select=id,name,title,companies,image,image_is_card,sort,reports_to,deleted_at", ORDER_BY="&order=sort.asc.nullslast,name.asc";
   const api = DEMO ? {
     list: async()=>demo.map(x=>({...x})),
-    version: async()=>"demo",
+    cal: async()=>{ calOk=true; return demoCal.map(x=>({...x})); },
+    version: async()=>"demo", calVersion: async()=>"demo", extrasVersion: async()=>"demo",
     save: async a=>{
-      const row={id:a.p_id||("d"+Date.now()),name:a.p_name,roles:a.p_roles||[],companies:a.p_companies,image_is_card:a.p_image_is_card,sort:a.p_sort,reports_to:a.p_reports_to||null,deleted_at:null,
-        image:a.p_keep_image?((demo.find(d=>d.id===a.p_id)||{}).image||null):a.p_image};
+      const old=a.p_id?(demo.find(d=>d.id===a.p_id)||{}):{};
+      const row={...old,id:a.p_id||("d"+Date.now()),name:a.p_name,title:a.p_title,companies:a.p_companies,image_is_card:a.p_image_is_card,sort:a.p_sort,reports_to:a.p_reports_to||null,deleted_at:null,
+        image:a.p_keep_image?(old.image||null):a.p_image};
       demo = a.p_id ? demo.map(d=>d.id===a.p_id?row:d) : demo.concat(row); },
-    remove: async (id,pw)=>{ if(pw!=="demo") throw new Error("wrong_password"); demo=demo.map(d=>d.id===id?{...d,deleted_at:new Date().toISOString()}:d); },
+    extras: async a=>{ demo=demo.map(d=>d.id===a.p_id?{...d,full_name:a.p_full_name||null,division:a.p_division||null,has_license:!!a.p_has_license}:d); },
+    saveCal: async a=>{ const row={id:a.p_id||("c"+Date.now()+Math.random().toString(36).slice(2,5)),kind:a.p_kind,person_id:a.p_person_id,title:a.p_title,start_date:a.p_start_date,end_date:a.p_end_date,part_of_day:a.p_part_of_day};
+      demoCal = a.p_id ? demoCal.map(c=>c.id===a.p_id?row:c) : demoCal.concat(row); },
+    removeCal: async id=>{ demoCal=demoCal.filter(c=>c.id!==id); },
+    remove: async id=>{ demo=demo.map(d=>d.id===id?{...d,deleted_at:new Date().toISOString()}:d); },
     restore: async id=>{ demo=demo.map(d=>d.id===id?{...d,deleted_at:null}:d); }
   } : {
-    list: ()=>rest("people?select=id,name,roles,division,title,companies,image,image_is_card,sort,reports_to,deleted_at&order=sort.asc.nullslast,name.asc"),
+    list: async()=>{
+      if(extrasOk!==false){
+        try{ const r=await rest(PEOPLE+",full_name,division,has_license"+ORDER_BY); extrasOk=true; return r; }
+        catch(e){ if(e.status!==400) throw e; extrasOk=false; }
+      }
+      return rest(PEOPLE+ORDER_BY);
+    },
+    cal: async()=>{
+      try{ const r=await rest("cal_items?select=id,kind,person_id,title,start_date,end_date,part_of_day&deleted_at=is.null&kind=in.(birthday,anniversary,out,ooo,oncall)"); calOk=true; return r; }
+      catch(e){ if(e.status===404||e.status===400){ calOk=false; return []; } throw e; }
+    },
     version: ()=>rest("rpc/board_version",{method:"POST",body:{}}),
+    calVersion: ()=>rest("rpc/cal_version",{method:"POST",body:{}}),
+    extrasVersion: ()=>rest("rpc/people_extras_version",{method:"POST",body:{}}),
     save: a=>rest("rpc/save_person",{method:"POST",body:a}),
-    remove: (id,pw)=>rest("rpc/remove_person",{method:"POST",body:{p_id:id,p_password:pw}}),
+    extras: a=>rest("rpc/save_person_extras",{method:"POST",body:a}),
+    saveCal: a=>rest("rpc/save_cal_item",{method:"POST",body:a}),
+    removeCal: id=>rest("rpc/remove_cal_item",{method:"POST",body:{p_id:id}}),
+    remove: id=>rest("rpc/remove_person",{method:"POST",body:{p_id:id}}),
     restore: id=>rest("rpc/restore_person",{method:"POST",body:{p_id:id}})
   };
 
@@ -315,21 +426,74 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
   let people=[], removed=[], tab="All", loaded=false, lastVersion=null, view="tiles";
   try{ if(localStorage.getItem("nveView")==="chart") view="chart"; }catch(e){}
   let tv=false, tvIndex=0, tvTimer=null, pinned=null, wake=null;
+  let cal=[], knownIds=new Set(), viewing=null;
 
   function note(text, err){ const n=$("note"); n.innerHTML=""; if(!text) return; const d=document.createElement("div"); d.textContent=text; if(err) d.className="err"; n.append(d); }
   function inTab(p,t){ return t==="All" || (p.companies||[]).includes(t); }
   function sorted(list){ return list.slice().sort((a,b)=>{ const sa=a.sort==null?9999:a.sort, sb=b.sort==null?9999:b.sort; return sa-sb || String(a.name).localeCompare(String(b.name)); }); }
   function initials(n){ return String(n).split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join(""); }
-  function roleText(p){ return (p.roles||[]).map(r=>[r.title,r.division].filter(Boolean).join(", ")).filter(Boolean).join(" · "); }
-  function addRoles(el, p){
-    (p.roles||[]).forEach(r=>{
-      const box=document.createElement("div"); box.className="role";
-      if(r.division) box.append(Object.assign(document.createElement("div"),{className:"dv",textContent:r.division}));
-      if(r.title) box.append(Object.assign(document.createElement("div"),{className:"tt",textContent:r.title}));
-      el.append(box);
-    });
-  }
   function imgSrc(p){ return (typeof p.image==="string" && p.image.indexOf("data:image/")===0) ? p.image : ""; }
+
+  // ---------- today's status, from the office calendar ----------
+  const ST={
+    bday:  {icon:"cake", c:"var(--st-bday)"},
+    anniv: {icon:"star", c:"var(--st-anniv)"},
+    out:   {icon:"away", c:"var(--st-out)"},
+    ooo:   {icon:"brief",c:"var(--st-ooo)"},
+    oncall:{icon:"bell", c:"var(--st-call)"}
+  };
+  const ST_ORDER={bday:0,anniv:1,out:2,ooo:3,oncall:4};
+  function statusOf(p){
+    const t=today(), id=String(p.id), out=[];
+    cal.forEach(c=>{
+      if(String(c.person_id)!==id) return;
+      const s0=parseD(c.start_date);
+      if(c.kind==="birthday"){ let m=s0.getMonth(), d=s0.getDate(); if(m===1&&d===29&&!isLeap(t.getFullYear())) d=28; if(m===t.getMonth()&&d===t.getDate()) out.push({k:"bday",c}); }
+      else if(c.kind==="anniversary"){ const y=t.getFullYear()-s0.getFullYear(); if(y>=0&&s0.getMonth()===t.getMonth()&&s0.getDate()===t.getDate()) out.push({k:"anniv",y,c}); }
+      else if(ST[c.kind]){ const e=c.end_date?parseD(c.end_date):s0; if(t>=s0&&t<=e) out.push({k:c.kind,c,e}); }
+    });
+    return out.sort((a,b)=>ST_ORDER[a.k]-ST_ORDER[b.k]);
+  }
+  function stShort(x){
+    if(x.k==="bday") return "Birthday";
+    if(x.k==="anniv") return x.y===0?"First day":x.y+(x.y===1?" year":" years");
+    if(x.k==="out") return x.c.part_of_day?("Out "+(x.c.part_of_day==="am"?"AM":"PM")):"Out today";
+    if(x.k==="ooo") return "Out of office";
+    return "On call";
+  }
+  function nextWorkday(d){ let x=addDays(d,1); while(x.getDay()===0||x.getDay()===6) x=addDays(x,1); return x; }
+  function rel(d){ const n=Math.round((d-today())/86400000); if(n===0) return "today"; if(n===1) return "tomorrow"; if(n>1&&n<7) return fmtD(d,{weekday:"long"}); return fmtD(d,{weekday:"short",month:"short",day:"numeric"}); }
+  function stLong(x){
+    if(x.k==="bday") return "Today is their birthday";
+    if(x.k==="anniv") return x.y===0?"Today is their first day at NVE":x.y+(x.y===1?" year":" years")+" at NVE today";
+    if(x.k==="out"){ if(x.c.part_of_day) return x.c.part_of_day==="am"?"Out this morning":"Out this afternoon"; return "Out today · back "+rel(nextWorkday(x.e)); }
+    if(x.k==="ooo") return ["Out of office"+(+x.e>+today()?" through "+rel(x.e):" today"), x.c.title].filter(Boolean).join(" · ");
+    return ["On call", x.c.title, +x.e>+today()?"through "+rel(x.e):null].filter(Boolean).join(" · ");
+  }
+  function statEl(list){
+    const box=document.createElement("div"); box.className="stat";
+    list.slice(0,2).forEach(x=>{ const sp=document.createElement("span"); sp.style.setProperty("--c",ST[x.k].c); sp.title=stLong(x); sp.innerHTML=icon(ST[x.k].icon); sp.append(Object.assign(document.createElement("b"),{textContent:stShort(x)})); box.append(sp); });
+    return box;
+  }
+  function licEl(){ const l=document.createElement("span"); l.className="lic"; l.title="Has a driver's license"; l.setAttribute("aria-label","Has a driver's license"); l.innerHTML=icon("car"); return l; }
+  function nameRow(p){
+    const r=document.createElement("div"); r.className="nmrow";
+    r.append(Object.assign(document.createElement("div"),{className:"nm",textContent:p.name}));
+    if(p.has_license) r.append(licEl());
+    return r;
+  }
+  function chipsEl(p){
+    const ch=document.createElement("div"); ch.className="chips";
+    COMPANIES.filter(x=>(p.companies||[]).includes(x.name)).forEach(x=>{ const s=document.createElement("span"); s.className="chip"; s.textContent=x.short; s.style.background=x.color; ch.append(s); });
+    return ch;
+  }
+  function clickable(el,p){
+    if(tv) return;
+    el.classList.add("click"); el.tabIndex=0; el.setAttribute("role","button"); el.setAttribute("aria-label","Open "+p.name);
+    el.onclick=()=>openView(p);
+    el.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openView(p); } };
+  }
+  function markStatus(el,st){ if(st.length){ el.classList.add("st"); el.style.setProperty("--sc",ST[st[0].k].c); } }
 
   // ---------- render ----------
   function renderTabs(){
@@ -342,21 +506,22 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     });
   }
   function cardEl(p){
-    const src=imgSrc(p), full=!!(p.image_is_card && src);
-    const c=document.createElement("article"); c.className="card"+(full?" full":"");
+    const src=imgSrc(p), full=!!(p.image_is_card && src), st=statusOf(p);
+    const c=document.createElement("article"); c.className="card"+(full?" full":""); markStatus(c,st);
     const pic=document.createElement("div"); pic.className="pic";
-    if(src){ const im=document.createElement("img"); im.alt=full?(p.name+(roleText(p)?", "+roleText(p):"")):""; im.src=src; pic.append(im); }
+    if(src){ const im=document.createElement("img"); im.alt=full?(p.name+", "+(p.title||"")):""; im.src=src; pic.append(im); }
     else pic.append(Object.assign(document.createElement("span"),{className:"ini",textContent:initials(p.name)}));
+    if(st.length) pic.append(statEl(st));
+    if(full && p.has_license) pic.append(licEl());
     c.append(pic);
     if(!full){
       const d=document.createElement("div"); d.className="info";
-      d.append(Object.assign(document.createElement("div"),{className:"nm",textContent:p.name}));
-      addRoles(d, p);
-      const ch=document.createElement("div"); ch.className="chips";
-      COMPANIES.filter(x=>(p.companies||[]).includes(x.name)).forEach(x=>{ const s=document.createElement("span"); s.className="chip"; s.textContent=x.short; s.style.background=x.color; ch.append(s); });
-      d.append(ch); c.append(d);
+      d.append(nameRow(p));
+      if(p.title) d.append(Object.assign(document.createElement("div"),{className:"tt",textContent:p.title}));
+      if(p.division) d.append(Object.assign(document.createElement("div"),{className:"dv",textContent:p.division}));
+      d.append(chipsEl(p)); c.append(d);
     }
-    if(!tv){ const e=document.createElement("button"); e.type="button"; e.className="edit"; e.textContent="Edit"; e.setAttribute("aria-label","Edit "+p.name); e.onclick=()=>withCode(()=>openForm(p)); c.append(e); }
+    clickable(c,p);
     return c;
   }
   function renderWall(target){
@@ -377,22 +542,21 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
 
   // ---------- org chart ----------
   function nodeEl(p, isRoot){
-    const src=imgSrc(p), full=!!(p.image_is_card && src);
-    const n=document.createElement("div"); n.className="node"+(full?" full":"");
-    if(full){ const im=document.createElement("img"); im.className="cardimg"; im.alt=p.name+(roleText(p)?", "+roleText(p):""); im.src=src; n.append(im); }
+    const src=imgSrc(p), full=!!(p.image_is_card && src), st=statusOf(p);
+    const n=document.createElement("div"); n.className="node"+(full?" full":""); markStatus(n,st);
+    if(st.length) n.append(statEl(st));
+    if(full){ const im=document.createElement("img"); im.className="cardimg"; im.alt=p.name+", "+(p.title||""); im.src=src; n.append(im); }
     else {
       const av=document.createElement("div"); av.className="av";
       if(src){ const im=document.createElement("img"); im.alt=""; im.src=src; av.append(im); }
       else av.append(Object.assign(document.createElement("span"),{className:"ini",textContent:initials(p.name)}));
-      n.append(av);
-      n.append(Object.assign(document.createElement("div"),{className:"nm",textContent:p.name}));
-      addRoles(n, p);
-      const ch=document.createElement("div"); ch.className="chips";
-      COMPANIES.filter(x=>(p.companies||[]).includes(x.name)).forEach(x=>{ const s=document.createElement("span"); s.className="chip"; s.textContent=x.short; s.style.background=x.color; ch.append(s); });
-      n.append(ch);
+      n.append(av, nameRow(p));
+      if(p.title) n.append(Object.assign(document.createElement("div"),{className:"tt",textContent:p.title}));
+      if(p.division) n.append(Object.assign(document.createElement("div"),{className:"dv",textContent:p.division}));
+      n.append(chipsEl(p));
     }
     if(isRoot && p.reports_to){ const boss=people.find(b=>b.id===p.reports_to); if(boss) n.append(Object.assign(document.createElement("div"),{className:"up",textContent:"Reports to "+boss.name})); }
-    if(!tv){ const e=document.createElement("button"); e.type="button"; e.className="edit"; e.textContent="Edit"; e.setAttribute("aria-label","Edit "+p.name); e.onclick=()=>openForm(p); n.append(e); }
+    clickable(n,p);
     return n;
   }
   function chartEl(list){
@@ -484,7 +648,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
       const who=document.createElement("div"); who.className="who";
       who.append(Object.assign(document.createElement("b"),{textContent:p.name}));
       let when=""; try{ when=new Date(p.deleted_at).toLocaleDateString(undefined,{month:"short",day:"numeric"}); }catch(e){}
-      who.append(Object.assign(document.createElement("span"),{textContent:[roleText(p), when?("Removed "+when):""].filter(Boolean).join(" · ")}));
+      who.append(Object.assign(document.createElement("span"),{textContent:[p.title, when?("Removed "+when):""].filter(Boolean).join(" · ")}));
       const b=document.createElement("button"); b.type="button"; b.className="btn ghost"; b.textContent="Restore";
       b.onclick=async()=>{ b.disabled=true; try{ await api.restore(p.id); await refresh(true); renderBin(); } catch(e){ $("binErr").textContent=friendly(e); b.disabled=false; } };
       row.append(who,b); list.append(row);
@@ -493,45 +657,96 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
   $("binBtn").onclick=()=>{ renderBin(); $("binDlg").showModal(); };
   $("binClose").onclick=()=>$("binDlg").close();
 
-  // ---------- form ----------
+  // ---------- details popup (click a card) ----------
+  function personCal(p, kind){ return cal.find(c=>c.kind===kind && String(c.person_id)===String(p.id)); }
+  function openView(p){
+    viewing=p; editing=null;
+    const src=imgSrc(p), full=!!(p.image_is_card && src);
+    const pic=$("vPic"); pic.innerHTML=""; pic.className="vpic"+(full?" full":"");
+    if(src){ const im=document.createElement("img"); im.alt=full?(p.name+", "+(p.title||"")):""; im.src=src; pic.append(im); }
+    else pic.append(Object.assign(document.createElement("span"),{className:"ini",textContent:initials(p.name)}));
+    const nm=$("vName"); nm.textContent=p.name; if(p.has_license) nm.append(licEl());
+    const fullName=(p.full_name||"").trim();
+    $("vFull").textContent = fullName && fullName!==p.name ? fullName : ""; $("vFull").hidden=!$("vFull").textContent;
+    $("vTitle").textContent=p.title||""; $("vTitle").hidden=!p.title;
+    $("vDiv").textContent=p.division||""; $("vDiv").hidden=!p.division;
+    const ch=$("vChips"); ch.replaceWith(Object.assign(chipsEl(p),{id:"vChips"}));
+    // today
+    const vs=$("vStat"); vs.innerHTML="";
+    statusOf(p).forEach(x=>{ const d=document.createElement("div"); d.style.setProperty("--c",ST[x.k].c); d.innerHTML=icon(ST[x.k].icon); d.append(stLong(x)); vs.append(d); });
+    vs.hidden=!vs.children.length;
+    // facts
+    const f=$("vFacts"); f.innerHTML="";
+    const row=(k,v,sm)=>{ if(v==null||v==="") return; const dd=document.createElement("dd"); dd.append(v); if(sm) dd.append(" ",Object.assign(document.createElement("small"),{textContent:sm})); f.append(Object.assign(document.createElement("dt"),{textContent:k}), dd); };
+    if(p.division) row("Division", p.division);
+    const boss=p.reports_to && people.find(b=>b.id===p.reports_to); if(boss) row("Reports to", boss.name);
+    const reports=people.filter(x=>x.reports_to===p.id).length; if(reports) row("Direct reports", String(reports));
+    const b=personCal(p,"birthday"); if(b){ const d0=parseD(b.start_date); row("Birthday", MONTHS[d0.getMonth()]+" "+d0.getDate()); }
+    const an=personCal(p,"anniversary");
+    if(an){ const d0=parseD(an.start_date), t=today(); let y=t.getFullYear()-d0.getFullYear(); if(t.getMonth()<d0.getMonth()||(t.getMonth()===d0.getMonth()&&t.getDate()<d0.getDate())) y--;
+      row("Started", fmtD(d0,{month:"long",day:"numeric",year:"numeric"}), d0>t?"(upcoming)":y<1?"(less than a year)":"("+y+(y===1?" year":" years")+")"); }
+    if(extrasOk!==false) row("Driver's license", p.has_license?"Yes":"No");
+    // next time away in the coming 30 days (time-off notes stay private)
+    const t=today(), soon=cal.filter(c=>String(c.person_id)===String(p.id)&&(c.kind==="out"||c.kind==="ooo")).map(c=>({c,s0:parseD(c.start_date),e:c.end_date?parseD(c.end_date):parseD(c.start_date)}))
+      .filter(x=>x.s0>t && x.s0<=addDays(t,30)).sort((a,b)=>a.s0-b.s0)[0];
+    if(soon){ const same=+soon.s0===+soon.e; row("Coming up", (soon.c.kind==="out"?"Out ":"Out of office ")+fmtD(soon.s0,{month:"short",day:"numeric"})+(same?"":"–"+fmtD(soon.e,soon.e.getMonth()===soon.s0.getMonth()?{day:"numeric"}:{month:"short",day:"numeric"}))); }
+    f.hidden=!f.children.length;
+    $("form").hidden=true; $("view").hidden=false;
+    $("dlg").setAttribute("aria-label",p.name);
+    if(!$("dlg").open) $("dlg").showModal();
+    $("vEdit").focus();
+  }
+  $("vClose").onclick=()=>$("dlg").close();
+  $("vEdit").onclick=()=>{ if(viewing) openForm(viewing); };
+  $("dlg").addEventListener("close",()=>{ viewing=null; editing=null; });
+
+  // ---------- form (edit view) ----------
   let editing=null, newImage=null;
   COMPANIES.forEach((c,i)=>{ const l=document.createElement("label"); const inp=document.createElement("input"); inp.type="checkbox"; inp.value=c.name; inp.id="co"+i;
     const sw=document.createElement("span"); sw.className="sw"; sw.style.background=c.color; l.append(inp,c.name,sw); $("fCos").append(l); });
-  function setThumb(url){ $("thumb").style.backgroundImage=url?'url("'+url.replace(/"/g,"%22")+'")':""; $("dropText").textContent=url?"Choose or drop to replace":"Choose or drop an image"; }
-  function roleRow(r){
-    const row=document.createElement("div"); row.className="rrow";
-    const dv=document.createElement("input"); dv.className="in rd"; dv.maxLength=80; dv.placeholder="Division"; dv.autocomplete="off"; dv.value=r.division||""; dv.setAttribute("aria-label","Division");
-    const tt=document.createElement("input"); tt.className="in rt"; tt.maxLength=120; tt.placeholder="Position / title"; tt.autocomplete="off"; tt.value=r.title||""; tt.setAttribute("aria-label","Position or title");
-    const x=document.createElement("button"); x.type="button"; x.className="x"; x.textContent="×"; x.setAttribute("aria-label","Remove this role");
-    x.onclick=()=>{ row.remove(); if(!$("fRoles").children.length) $("fRoles").append(roleRow({})); updateAddRole(); };
-    row.append(dv,tt,x); return row;
+  $("fBM").append(new Option("Month",""), ...MONTHS.map((m,i)=>new Option(m,String(i+1))));
+  function fillDays(keep){
+    const m=Number($("fBM").value), n=m?[31,29,31,30,31,30,31,31,30,31,30,31][m-1]:31, sel=$("fBD"), cur=keep!=null?keep:sel.value;
+    sel.innerHTML=""; sel.append(new Option("Day","")); for(let d=1; d<=n; d++) sel.append(new Option(String(d),String(d)));
+    sel.value = cur && Number(cur)<=n ? String(cur) : (cur?String(n):"");
   }
-  function setRoles(list){ const box=$("fRoles"); box.innerHTML=""; list.slice(0,10).forEach(r=>box.append(roleRow(r))); updateAddRole(); }
-  function updateAddRole(){ $("addRole").hidden = $("fRoles").children.length>=10; }
-  function getRoles(){ return [...$("fRoles").querySelectorAll(".rrow")].map(r=>({division:r.querySelector(".rd").value.trim(), title:r.querySelector(".rt").value.trim()})).filter(r=>r.division||r.title); }
-  $("addRole").onclick=()=>{ const row=roleRow({}); $("fRoles").append(row); row.querySelector(".rd").focus(); updateAddRole(); };
+  $("fBM").onchange=()=>fillDays();
+  function setThumb(url){ $("thumb").style.backgroundImage=url?'url("'+url.replace(/"/g,"%22")+'")':""; $("dropText").textContent=url?"Choose or drop to replace":"Choose or drop an image"; }
   function fillBoss(p){
     const sel=$("fBoss"); sel.innerHTML="";
     sel.append(new Option("No one (top of the chart)",""));
     const blocked=new Set();
     if(p){ blocked.add(p.id); let grew=true; while(grew){ grew=false; people.forEach(x=>{ if(x.reports_to && blocked.has(x.reports_to) && !blocked.has(x.id)){ blocked.add(x.id); grew=true; } }); } }
     people.filter(x=>!blocked.has(x.id)).sort((a,b)=>a.name.localeCompare(b.name))
-      .forEach(x=>sel.append(new Option(x.name+(roleText(x)?" — "+roleText(x):""), x.id)));
+      .forEach(x=>sel.append(new Option(x.name+(x.title?" — "+x.title:""), x.id)));
     sel.value = p && p.reports_to && !blocked.has(p.reports_to) && people.some(x=>x.id===p.reports_to) ? p.reports_to : "";
   }
   function openForm(p){
     editing=p; newImage=null;
     $("dlgTitle").textContent=p?"Edit "+p.name:"Add person";
-    $("fName").value=p?p.name:""; setRoles(p&&p.roles&&p.roles.length?p.roles:[{division:"",title:""}]);
+    $("fName").value=p?p.name:""; $("fTitle").value=p?(p.title||""):"";
+    $("fFull").value=p?(p.full_name||""):""; $("fDiv").value=p?(p.division||""):""; $("fLic").checked=!!(p&&p.has_license);
+    const dl=$("divList"); dl.innerHTML=""; [...new Set(people.map(x=>x.division).filter(Boolean))].sort().forEach(d=>dl.append(new Option(d)));
+    const bd=p&&personCal(p,"birthday"), an=p&&personCal(p,"anniversary");
+    if(bd){ const d0=parseD(bd.start_date); $("fBM").value=String(d0.getMonth()+1); fillDays(String(d0.getDate())); } else { $("fBM").value=""; fillDays(""); }
+    $("fStart").value=an?String(an.start_date).slice(0,10):"";
+    // fields that need a database step that hasn't been run yet
+    ["fFull","fDiv","fLic"].forEach(id=>$(id).disabled=extrasOk===false);
+    ["fBM","fBD","fStart"].forEach(id=>$(id).disabled=calOk===false);
+    $("hDates").textContent = calOk===false ? "Birthdays and start dates turn on once the office calendar is set up (calendar-setup.sql)."
+      : "These also feed the office calendar. On the board, the dates only show when someone opens this person.";
     $("fSort").value=p&&p.sort!=null?p.sort:""; $("fCard").checked=p?!!p.image_is_card:false; $("fRemove").checked=false;
     $("rmWrap").hidden=!(p&&imgSrc(p));
     $("fCos").querySelectorAll("input").forEach(i=>i.checked=p?(p.companies||[]).includes(i.value):(tab!=="All"&&i.value===tab));
     fillBoss(p);
     setThumb(p?imgSrc(p):""); $("delBtn").hidden=!p; $("confirmDel").hidden=true; $("fErr").textContent="";
     $("save").disabled=false; $("save").textContent="Save";
-    $("dlg").showModal(); $("fName").focus();
+    $("view").hidden=true; $("form").hidden=false; $("dlg").removeAttribute("aria-label");
+    if(!$("dlg").open) $("dlg").showModal();
+    $("fName").focus();
   }
-  $("cancel").onclick=()=>$("dlg").close();
+  // Cancel goes back to the details view when editing someone, or closes when adding.
+  $("cancel").onclick=()=>{ const p=editing && people.find(x=>x.id===editing.id); if(p) openView(p); else $("dlg").close(); };
   function shrink(file){
     return new Promise((ok,bad)=>{
       const u=URL.createObjectURL(file), im=new Image();
@@ -564,58 +779,97 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
 
   function friendly(e){
     const m=String(e&&e.message||"");
-    if(/wrong_password/.test(m)) return "That password isn't right. Check with whoever manages the board.";
-    if(/division_too_long/.test(m)) return "Keep the division under 80 characters.";
-    if(/name_required/.test(m)) return "Add the person's name.";
+    if(/name_required/.test(m)) return "Add the person's listed name.";
     if(/bad_image/.test(m)) return "That image couldn't be saved. Try a different JPG or PNG.";
     if(/self_report/.test(m)) return "Someone can't report to themselves. Pick a different person.";
     if(/not_found/.test(m)) return "This person was already removed by someone else.";
+    if(/save_person_extras|PGRST202/.test(m)) return "Actual name, division and driver's license need the board update. Run org-chart-upgrade.sql in Supabase.";
     if(/Failed to fetch|NetworkError|Load failed/i.test(m)) return "Couldn't reach the board. Check your internet connection and try again.";
     return m || "Something went wrong. Try again.";
+  }
+  // Find the id of a person the board just created (works however the database returns it).
+  async function newPersonId(ret, name){
+    if(typeof ret==="string" && ret) return ret;
+    if(ret && typeof ret==="object" && !Array.isArray(ret) && ret.id) return String(ret.id);
+    if(Array.isArray(ret) && ret[0] && ret[0].id) return String(ret[0].id);
+    const rows=await api.list(), fresh=(rows||[]).filter(r=>!knownIds.has(String(r.id)));
+    const hit=fresh.find(r=>r.name===name)||fresh[0];
+    return hit?String(hit.id):null;
+  }
+  async function saveDate(personId, kind, date){
+    const cur=cal.find(c=>c.kind===kind && String(c.person_id)===String(personId));
+    if(date){
+      if(cur && String(cur.start_date).slice(0,10)===date) return;
+      await api.saveCal({ p_id:cur?cur.id:null, p_kind:kind, p_person_id:String(personId), p_title:null, p_start_date:date, p_end_date:null, p_part_of_day:null, p_start_time:null, p_companies:[] });
+    } else if(cur) await api.removeCal(cur.id);
   }
   $("form").addEventListener("submit", async ev=>{
     ev.preventDefault();
     const name=$("fName").value.trim(), companies=[...$("fCos").querySelectorAll("input:checked")].map(i=>i.value);
-    if(!name){ $("fErr").textContent="Add the person's name."; $("fName").focus(); return; }
+    if(!name){ $("fErr").textContent="Add the person's listed name."; $("fName").focus(); return; }
     if(!companies.length){ $("fErr").textContent="Tick at least one company under “Works for”."; return; }
+    const bm=$("fBM").value, bdv=$("fBD").value;
+    if(!!bm !== !!bdv){ $("fErr").textContent="Pick both the month and the day for the birthday, or leave both blank."; return; }
     const sortRaw=$("fSort").value.trim();
     const keep = !newImage && !$("fRemove").checked;
     $("save").disabled=true; $("save").textContent=newImage?"Uploading…":"Saving…"; $("fErr").textContent="";
+    let id=editing?String(editing.id):null;
     try{
-      await api.save({ p_id:editing?editing.id:null, p_name:name, p_roles:getRoles(), p_companies:companies,
+      const ret=await api.save({ p_id:editing?editing.id:null, p_name:name, p_title:$("fTitle").value.trim(), p_companies:companies,
         p_image: keep ? null : (newImage||null), p_keep_image: !!(editing && keep), p_image_is_card:$("fCard").checked,
         p_sort: sortRaw===""||isNaN(Number(sortRaw)) ? null : Math.round(Number(sortRaw)),
         p_reports_to: $("fBoss").value || null });
-      $("dlg").close(); await refresh(true);
-    }catch(e){ $("fErr").textContent=friendly(e); $("save").disabled=false; $("save").textContent="Save"; }
+      if(!id) id=await newPersonId(ret, name);
+    }catch(e){ $("fErr").textContent=friendly(e); $("save").disabled=false; $("save").textContent="Save"; return; }
+    // The person is saved. Now the extra details; report anything that didn't stick.
+    const problems=[];
+    if(id && extrasOk!==false){
+      try{ await api.extras({ p_id:id, p_full_name:$("fFull").value.trim()||null, p_division:$("fDiv").value.trim()||null, p_has_license:$("fLic").checked }); }
+      catch(e){ problems.push(friendly(e)); }
+    }
+    if(id && calOk!==false){
+      try{ await saveDate(id,"birthday", bm&&bdv ? "2000-"+pad(bm)+"-"+pad(bdv) : null); } catch(e){ problems.push("The birthday couldn't be saved: "+friendly(e)); }
+      try{ await saveDate(id,"anniversary", $("fStart").value||null); } catch(e){ problems.push("The start date couldn't be saved: "+friendly(e)); }
+    }
+    if(!id) problems.push("Saved, but the extra details couldn't be attached. Reload and edit the person once more.");
+    const wasEditing=!!editing;
+    await refresh(true);
+    if(problems.length){ $("fErr").textContent="Saved, with a problem: "+problems.join(" "); $("save").disabled=false; $("save").textContent="Save"; if(id) editing=people.find(x=>String(x.id)===id)||editing; return; }
+    const fresh=id && people.find(x=>String(x.id)===id);
+    if(wasEditing && fresh) openView(fresh); else $("dlg").close();
   });
-  $("delBtn").onclick=()=>{ $("confirmDel").hidden=false; $("delPw").value=""; $("delPw").focus(); };
-  $("delPw").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); $("yesDel").click(); } });
+  $("delBtn").onclick=()=>{ $("confirmDel").hidden=false; };
   $("noDel").onclick=()=>{ $("confirmDel").hidden=true; };
   $("yesDel").onclick=async()=>{
-    if(!editing) return;
-    const pw=$("delPw").value; if(!pw){ $("fErr").textContent="Enter the password to remove someone."; $("delPw").focus(); return; }
-    $("yesDel").disabled=true;
-    try{ await api.remove(editing.id, pw); $("dlg").close(); await refresh(true); }
+    if(!editing) return; $("yesDel").disabled=true;
+    try{ await api.remove(editing.id); $("dlg").close(); await refresh(true); }
     catch(e){ $("fErr").textContent=friendly(e); }
     $("yesDel").disabled=false;
   };
 
   // ---------- loading & change checks ----------
+  async function versionAll(){
+    const r=await Promise.allSettled([api.version(), calOk?api.calVersion():Promise.resolve(0), extrasOk?api.extrasVersion():Promise.resolve(0)]);
+    if(r[0].status==="rejected") throw r[0].reason;
+    return r.map(x=>x.status==="fulfilled"?JSON.stringify(x.value):"?").join("|")+"|"+ymd(today());
+  }
   async function refresh(force){
     try{
-      if(!force && loaded){ const v=await api.version(); if(v===lastVersion) return; lastVersion=v; }
-      else { try{ lastVersion=await api.version(); }catch(e){} }
-      const rows=await api.list();
-      const all=(rows||[]).map(r=>({ id:r.id, name:String(r.name||""), roles: Array.isArray(r.roles)&&r.roles.length ? r.roles.map(x=>({division:String(x&&x.division||""), title:String(x&&x.title||"")})).filter(x=>x.division||x.title)
-          : ((r.division||r.title) ? [{division:String(r.division||""), title:String(r.title||"")}] : []), companies:Array.isArray(r.companies)?r.companies:[],
-        image:r.image||null, image_is_card:!!r.image_is_card, sort:typeof r.sort==="number"?r.sort:null, reports_to:r.reports_to||null, deleted_at:r.deleted_at||null })).filter(p=>p.name);
+      if(!force && loaded){ const v=await versionAll(); if(v===lastVersion) return; lastVersion=v; }
+      else { try{ lastVersion=await versionAll(); }catch(e){} }
+      const [rows, calRows]=await Promise.all([api.list(), api.cal()]);
+      const all=(rows||[]).map(r=>({ id:r.id, name:String(r.name||""), title:String(r.title||""), companies:Array.isArray(r.companies)?r.companies:[],
+        image:r.image||null, image_is_card:!!r.image_is_card, sort:typeof r.sort==="number"?r.sort:null, reports_to:r.reports_to||null, deleted_at:r.deleted_at||null,
+        full_name:r.full_name?String(r.full_name):null, division:r.division?String(r.division):null, has_license:!!r.has_license })).filter(p=>p.name);
+      knownIds=new Set(all.map(p=>String(p.id)));
+      cal=(calRows||[]).filter(c=>c && c.person_id!=null && c.start_date);
       people=all.filter(p=>!p.deleted_at); removed=all.filter(p=>p.deleted_at);
       $("binBtn").hidden=!removed.length; $("binBtn").textContent="Recently removed ("+removed.length+")";
       const first=!loaded; loaded=true;
       if(DEMO) note("Demo mode: changes aren't saved. Add your Supabase details at the top of index.html to go live.");
+      else if(extrasOk===false) note("One step left: run org-chart-upgrade.sql in Supabase to turn on actual names, divisions and driver's licenses.");
       else note("");
-      if(!tv) render(); else if(first) showTV();
+      if(!tv) render(); else if(first) showTV();   // TVs pick up changes on their next page turn
     }catch(e){
       if(!loaded){ loaded=true; render(); note("Couldn't load the team. Check the internet connection, then reload. If this keeps happening, the board's database settings at the top of index.html may be wrong.", true); }
     }
