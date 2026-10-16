@@ -233,6 +233,24 @@ a.btn{text-decoration:none}
 .bday{display:grid;grid-template-columns:1.5fr 1fr;gap:6px}
 .hint{color:var(--muted);font-size:13px;margin:-6px 0 0;line-height:1.45}
 .fld input:disabled,.fld select:disabled{opacity:.55}
+.role+.role{margin-top:6px}
+.vroles{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.vroles div b{display:block;font-size:15.5px}
+.vroles div span{color:var(--muted);font-size:14px;font-weight:600}
+.roles-f{display:flex;flex-direction:column;gap:8px}
+.rrow{display:grid;grid-template-columns:1fr 1.3fr auto;gap:8px;align-items:center}
+.rrow .x{width:36px;height:40px;border:1px solid var(--line);background:transparent;border-radius:10px;cursor:pointer;font-size:18px;line-height:1;color:var(--muted)}
+.rrow .x:hover{color:var(--danger);border-color:var(--danger)}
+.rhead{display:grid;grid-template-columns:1fr 1.3fr 36px;gap:8px;font-size:12px;color:var(--muted);font-weight:600}
+.addrole{align-self:flex-start;background:none;border:0;color:var(--accent);font-weight:700;font-size:14px;cursor:pointer;padding:4px 0}
+.confirm .row{display:flex;gap:8px;flex-wrap:wrap;width:100%}
+.confirm .row .in{flex:1;min-width:140px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:560px){
+  .rrow{grid-template-columns:1fr auto;grid-template-areas:"d x" "t x";padding:8px;border:1px solid var(--line);border-radius:12px}
+  .rrow .rd{grid-area:d} .rrow .rt{grid-area:t} .rrow .x{grid-area:x;align-self:center}
+  .rhead{display:none}
+}
 @media (max-width:560px){ .brand{flex-basis:100%} .vtop{flex-direction:column} .two{grid-template-columns:1fr} .facts{grid-template-columns:1fr;gap:2px} .facts dd{margin-bottom:8px} }
 </style>
 </head>
@@ -267,7 +285,7 @@ a.btn{text-decoration:none}
   <div class="view" id="view" hidden>
     <div class="vtop">
       <div class="vpic" id="vPic"></div>
-      <div class="vhead"><h2 id="vName"></h2><p class="vfull" id="vFull"></p><p class="vttl" id="vTitle"></p><p class="vdiv" id="vDiv"></p><div class="chips" id="vChips"></div></div>
+      <div class="vhead"><h2 id="vName"></h2><p class="vfull" id="vFull"></p><div class="vroles" id="vRoles"></div><div class="chips" id="vChips"></div></div>
     </div>
     <div class="vstat" id="vStat"></div>
     <dl class="facts" id="vFacts"></dl>
@@ -279,8 +297,12 @@ a.btn{text-decoration:none}
       <div class="fld"><label for="fName">Listed name <small>shown on the board</small></label><input class="in" id="fName" maxlength="80" autocomplete="off" placeholder="e.g. Mike"></div>
       <div class="fld"><label for="fFull">Actual name <small>optional</small></label><input class="in" id="fFull" maxlength="120" autocomplete="off" placeholder="e.g. Michael Russo"></div>
     </div>
-    <div class="fld"><label for="fTitle">Position / title</label><input class="in" id="fTitle" maxlength="120" autocomplete="off"></div>
-    <div class="fld"><label for="fDiv">Division <small>optional</small></label><input class="in" id="fDiv" maxlength="80" autocomplete="off" list="divList" placeholder="e.g. Snow & Ice, Maintenance, Install"><datalist id="divList"></datalist></div>
+    <div class="fld"><span>Roles <small>optional — one row for each division and title this person holds</small></span>
+      <div class="rhead" aria-hidden="true"><span>Division</span><span>Position / title</span><span></span></div>
+      <div class="roles-f" id="fRoles"></div>
+      <button class="addrole" type="button" id="addRole">+ Add another role</button>
+      <datalist id="divList"></datalist>
+    </div>
     <div class="fld"><span>Works for</span><div class="cos" id="fCos"></div></div>
     <div class="fld"><label for="fBoss">Reports to</label><select class="in" id="fBoss"></select></div>
     <div class="two">
@@ -297,7 +319,7 @@ a.btn{text-decoration:none}
     <label class="opt" id="rmWrap" hidden><input type="checkbox" id="fRemove"> Remove the current image</label>
     <div class="fld"><label for="fSort">Sort order <small>optional, lower numbers show first</small></label><input class="in" id="fSort" type="number" step="1" style="max-width:140px"></div>
     <p class="err-line" id="fErr" role="alert"></p>
-    <div class="confirm" id="confirmDel" hidden>Remove this person? You can restore them for 30 days.<span style="flex:1"></span><button class="btn ghost" type="button" id="noDel">Keep</button><button class="btn danger" type="button" id="yesDel">Remove</button></div>
+    <div class="confirm" id="confirmDel" hidden><span>Removing someone needs the password. They can be restored for 30 days.</span><div class="row"><label for="delPw" class="sr">Password</label><input class="in" id="delPw" type="password" autocomplete="off" placeholder="Password"><button class="btn ghost" type="button" id="noDel">Cancel</button><button class="btn danger" type="button" id="yesDel">Remove</button></div></div>
     <div class="actions">
       <button class="btn quiet" type="button" id="delBtn" hidden>Remove person</button><span class="sp"></span>
       <button class="btn ghost" type="button" id="cancel">Cancel</button><button class="btn" type="submit" id="save">Save</button>
@@ -350,13 +372,14 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
 
   // ---------- data layer ----------
   const t0=today(), dd=n=>ymd(addDays(t0,n)), md=n=>{ const x=addDays(t0,n); return "2000-"+pad(x.getMonth()+1)+"-"+pad(x.getDate()); };
+  const RL=(...pairs)=>pairs.map(([division,title])=>({division,title}));
   let demo = [
-    {id:"d1",name:"Sample Owner",full_name:"Samuel J. Owner",title:"President & CEO",division:null,has_license:true,companies:COMPANIES.map(c=>c.name),image:null,image_is_card:false,sort:1,reports_to:null},
-    {id:"d2",name:"Sam",full_name:"Samantha Designer",title:"Landscape Designer",division:"Design",has_license:true,companies:["New Vista"],image:null,image_is_card:false,sort:null,reports_to:"d1"},
-    {id:"d3",name:"Sample Account Manager",full_name:null,title:"Account Manager",division:"Commercial Maintenance",has_license:true,companies:["Green Estates"],image:null,image_is_card:false,sort:null,reports_to:"d5"},
-    {id:"d4",name:"Sample Technician",full_name:null,title:"Lawn Care Technician",division:"Lawn Care",has_license:false,companies:["Dura Lawn"],image:null,image_is_card:false,sort:null,reports_to:"d1"},
-    {id:"d5",name:"Sample Yard Manager",full_name:null,title:"Yard Manager",division:"Yard & Delivery",has_license:true,companies:["Buckeye Outdoor Supply","Green Estates"],image:null,image_is_card:false,sort:null,reports_to:"d1"},
-    {id:"d6",name:"Sample Crew Lead",full_name:null,title:"Crew Lead",division:"Snow & Ice",has_license:false,companies:["Green Estates"],image:null,image_is_card:false,sort:null,reports_to:"d5"}
+    {id:"d1",name:"Sample Owner",full_name:"Samuel J. Owner",roles:RL(["","President & CEO"]),has_license:true,companies:COMPANIES.map(c=>c.name),image:null,image_is_card:false,sort:1,reports_to:null},
+    {id:"d2",name:"Sam",full_name:"Samantha Designer",roles:RL(["Design","Landscape Designer"],["Sales","Estimator"]),has_license:true,companies:["New Vista"],image:null,image_is_card:false,sort:null,reports_to:"d1"},
+    {id:"d3",name:"Sample Account Manager",full_name:null,roles:RL(["Commercial Maintenance","Account Manager"]),has_license:true,companies:["Green Estates"],image:null,image_is_card:false,sort:null,reports_to:"d5"},
+    {id:"d4",name:"Sample Technician",full_name:null,roles:RL(["Lawn Care","Lawn Care Technician"]),has_license:false,companies:["Dura Lawn"],image:null,image_is_card:false,sort:null,reports_to:"d1"},
+    {id:"d5",name:"Sample Yard Manager",full_name:null,roles:RL(["Yard & Delivery","Yard Manager"]),has_license:true,companies:["Buckeye Outdoor Supply","Green Estates"],image:null,image_is_card:false,sort:null,reports_to:"d1"},
+    {id:"d6",name:"Sample Crew Lead",full_name:null,roles:RL(["Snow & Ice","Crew Lead"]),has_license:false,companies:["Green Estates"],image:null,image_is_card:false,sort:null,reports_to:"d5"}
   ];
   let demoCal = [
     {id:"c1",kind:"birthday",person_id:"d2",start_date:md(0)},
@@ -383,26 +406,26 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
   // calOk: the office calendar's table exists (birthdays, start dates, who's out).
   // extrasOk: org-chart-upgrade.sql has been run (actual name, division, driver's license).
   let calOk=null, extrasOk=null;
-  const PEOPLE="people?select=id,name,title,companies,image,image_is_card,sort,reports_to,deleted_at", ORDER_BY="&order=sort.asc.nullslast,name.asc";
+  const PEOPLE="people?select=id,name,roles,division,title,companies,image,image_is_card,sort,reports_to,deleted_at", ORDER_BY="&order=sort.asc.nullslast,name.asc";
   const api = DEMO ? {
     list: async()=>demo.map(x=>({...x})),
     cal: async()=>{ calOk=true; return demoCal.map(x=>({...x})); },
     version: async()=>"demo", calVersion: async()=>"demo", extrasVersion: async()=>"demo",
     save: async a=>{
       const old=a.p_id?(demo.find(d=>d.id===a.p_id)||{}):{};
-      const row={...old,id:a.p_id||("d"+Date.now()),name:a.p_name,title:a.p_title,companies:a.p_companies,image_is_card:a.p_image_is_card,sort:a.p_sort,reports_to:a.p_reports_to||null,deleted_at:null,
+      const row={...old,id:a.p_id||("d"+Date.now()),name:a.p_name,roles:a.p_roles||[],companies:a.p_companies,image_is_card:a.p_image_is_card,sort:a.p_sort,reports_to:a.p_reports_to||null,deleted_at:null,
         image:a.p_keep_image?(old.image||null):a.p_image};
       demo = a.p_id ? demo.map(d=>d.id===a.p_id?row:d) : demo.concat(row); },
-    extras: async a=>{ demo=demo.map(d=>d.id===a.p_id?{...d,full_name:a.p_full_name||null,division:a.p_division||null,has_license:!!a.p_has_license}:d); },
+    extras: async a=>{ demo=demo.map(d=>d.id===a.p_id?{...d,full_name:a.p_full_name||null,has_license:!!a.p_has_license}:d); },
     saveCal: async a=>{ const row={id:a.p_id||("c"+Date.now()+Math.random().toString(36).slice(2,5)),kind:a.p_kind,person_id:a.p_person_id,title:a.p_title,start_date:a.p_start_date,end_date:a.p_end_date,part_of_day:a.p_part_of_day};
       demoCal = a.p_id ? demoCal.map(c=>c.id===a.p_id?row:c) : demoCal.concat(row); },
     removeCal: async id=>{ demoCal=demoCal.filter(c=>c.id!==id); },
-    remove: async id=>{ demo=demo.map(d=>d.id===id?{...d,deleted_at:new Date().toISOString()}:d); },
+    remove: async (id,pw)=>{ if(pw!=="demo") throw new Error("wrong_password"); demo=demo.map(d=>d.id===id?{...d,deleted_at:new Date().toISOString()}:d); },
     restore: async id=>{ demo=demo.map(d=>d.id===id?{...d,deleted_at:null}:d); }
   } : {
     list: async()=>{
       if(extrasOk!==false){
-        try{ const r=await rest(PEOPLE+",full_name,division,has_license"+ORDER_BY); extrasOk=true; return r; }
+        try{ const r=await rest(PEOPLE+",full_name,has_license"+ORDER_BY); extrasOk=true; return r; }
         catch(e){ if(e.status!==400) throw e; extrasOk=false; }
       }
       return rest(PEOPLE+ORDER_BY);
@@ -418,7 +441,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     extras: a=>rest("rpc/save_person_extras",{method:"POST",body:a}),
     saveCal: a=>rest("rpc/save_cal_item",{method:"POST",body:a}),
     removeCal: id=>rest("rpc/remove_cal_item",{method:"POST",body:{p_id:id}}),
-    remove: id=>rest("rpc/remove_person",{method:"POST",body:{p_id:id}}),
+    remove: (id,pw)=>rest("rpc/remove_person",{method:"POST",body:{p_id:id,p_password:pw}}),
     restore: id=>rest("rpc/restore_person",{method:"POST",body:{p_id:id}})
   };
 
@@ -475,6 +498,15 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     list.slice(0,2).forEach(x=>{ const sp=document.createElement("span"); sp.style.setProperty("--c",ST[x.k].c); sp.title=stLong(x); sp.innerHTML=icon(ST[x.k].icon); sp.append(Object.assign(document.createElement("b"),{textContent:stShort(x)})); box.append(sp); });
     return box;
   }
+  function roleText(p){ return (p.roles||[]).map(r=>[r.title,r.division].filter(Boolean).join(", ")).filter(Boolean).join(" · "); }
+  function addRoles(el, p){
+    (p.roles||[]).forEach(r=>{
+      const box=document.createElement("div"); box.className="role";
+      if(r.title) box.append(Object.assign(document.createElement("div"),{className:"tt",textContent:r.title}));
+      if(r.division) box.append(Object.assign(document.createElement("div"),{className:"dv",textContent:r.division}));
+      el.append(box);
+    });
+  }
   function licEl(){ const l=document.createElement("span"); l.className="lic"; l.title="Has a driver's license"; l.setAttribute("aria-label","Has a driver's license"); l.innerHTML=icon("car"); return l; }
   function nameRow(p){
     const r=document.createElement("div"); r.className="nmrow";
@@ -509,7 +541,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     const src=imgSrc(p), full=!!(p.image_is_card && src), st=statusOf(p);
     const c=document.createElement("article"); c.className="card"+(full?" full":""); markStatus(c,st);
     const pic=document.createElement("div"); pic.className="pic";
-    if(src){ const im=document.createElement("img"); im.alt=full?(p.name+", "+(p.title||"")):""; im.src=src; pic.append(im); }
+    if(src){ const im=document.createElement("img"); im.alt=full?(p.name+(roleText(p)?", "+roleText(p):"")):""; im.src=src; pic.append(im); }
     else pic.append(Object.assign(document.createElement("span"),{className:"ini",textContent:initials(p.name)}));
     if(st.length) pic.append(statEl(st));
     if(full && p.has_license) pic.append(licEl());
@@ -517,8 +549,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     if(!full){
       const d=document.createElement("div"); d.className="info";
       d.append(nameRow(p));
-      if(p.title) d.append(Object.assign(document.createElement("div"),{className:"tt",textContent:p.title}));
-      if(p.division) d.append(Object.assign(document.createElement("div"),{className:"dv",textContent:p.division}));
+      addRoles(d, p);
       d.append(chipsEl(p)); c.append(d);
     }
     clickable(c,p);
@@ -545,14 +576,13 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     const src=imgSrc(p), full=!!(p.image_is_card && src), st=statusOf(p);
     const n=document.createElement("div"); n.className="node"+(full?" full":""); markStatus(n,st);
     if(st.length) n.append(statEl(st));
-    if(full){ const im=document.createElement("img"); im.className="cardimg"; im.alt=p.name+", "+(p.title||""); im.src=src; n.append(im); }
+    if(full){ const im=document.createElement("img"); im.className="cardimg"; im.alt=p.name+(roleText(p)?", "+roleText(p):""); im.src=src; n.append(im); }
     else {
       const av=document.createElement("div"); av.className="av";
       if(src){ const im=document.createElement("img"); im.alt=""; im.src=src; av.append(im); }
       else av.append(Object.assign(document.createElement("span"),{className:"ini",textContent:initials(p.name)}));
       n.append(av, nameRow(p));
-      if(p.title) n.append(Object.assign(document.createElement("div"),{className:"tt",textContent:p.title}));
-      if(p.division) n.append(Object.assign(document.createElement("div"),{className:"dv",textContent:p.division}));
+      addRoles(n, p);
       n.append(chipsEl(p));
     }
     if(isRoot && p.reports_to){ const boss=people.find(b=>b.id===p.reports_to); if(boss) n.append(Object.assign(document.createElement("div"),{className:"up",textContent:"Reports to "+boss.name})); }
@@ -648,7 +678,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
       const who=document.createElement("div"); who.className="who";
       who.append(Object.assign(document.createElement("b"),{textContent:p.name}));
       let when=""; try{ when=new Date(p.deleted_at).toLocaleDateString(undefined,{month:"short",day:"numeric"}); }catch(e){}
-      who.append(Object.assign(document.createElement("span"),{textContent:[p.title, when?("Removed "+when):""].filter(Boolean).join(" · ")}));
+      who.append(Object.assign(document.createElement("span"),{textContent:[roleText(p), when?("Removed "+when):""].filter(Boolean).join(" · ")}));
       const b=document.createElement("button"); b.type="button"; b.className="btn ghost"; b.textContent="Restore";
       b.onclick=async()=>{ b.disabled=true; try{ await api.restore(p.id); await refresh(true); renderBin(); } catch(e){ $("binErr").textContent=friendly(e); b.disabled=false; } };
       row.append(who,b); list.append(row);
@@ -663,13 +693,14 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     viewing=p; editing=null;
     const src=imgSrc(p), full=!!(p.image_is_card && src);
     const pic=$("vPic"); pic.innerHTML=""; pic.className="vpic"+(full?" full":"");
-    if(src){ const im=document.createElement("img"); im.alt=full?(p.name+", "+(p.title||"")):""; im.src=src; pic.append(im); }
+    if(src){ const im=document.createElement("img"); im.alt=full?(p.name+(roleText(p)?", "+roleText(p):"")):""; im.src=src; pic.append(im); }
     else pic.append(Object.assign(document.createElement("span"),{className:"ini",textContent:initials(p.name)}));
     const nm=$("vName"); nm.textContent=p.name; if(p.has_license) nm.append(licEl());
     const fullName=(p.full_name||"").trim();
     $("vFull").textContent = fullName && fullName!==p.name ? fullName : ""; $("vFull").hidden=!$("vFull").textContent;
-    $("vTitle").textContent=p.title||""; $("vTitle").hidden=!p.title;
-    $("vDiv").textContent=p.division||""; $("vDiv").hidden=!p.division;
+    const vr=$("vRoles"); vr.innerHTML="";
+    (p.roles||[]).forEach(r=>{ const d=document.createElement("div"); if(r.title) d.append(Object.assign(document.createElement("b"),{textContent:r.title})); if(r.division) d.append(Object.assign(document.createElement("span"),{textContent:r.division})); vr.append(d); });
+    vr.hidden=!vr.children.length;
     const ch=$("vChips"); ch.replaceWith(Object.assign(chipsEl(p),{id:"vChips"}));
     // today
     const vs=$("vStat"); vs.innerHTML="";
@@ -678,7 +709,6 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     // facts
     const f=$("vFacts"); f.innerHTML="";
     const row=(k,v,sm)=>{ if(v==null||v==="") return; const dd=document.createElement("dd"); dd.append(v); if(sm) dd.append(" ",Object.assign(document.createElement("small"),{textContent:sm})); f.append(Object.assign(document.createElement("dt"),{textContent:k}), dd); };
-    if(p.division) row("Division", p.division);
     const boss=p.reports_to && people.find(b=>b.id===p.reports_to); if(boss) row("Reports to", boss.name);
     const reports=people.filter(x=>x.reports_to===p.id).length; if(reports) row("Direct reports", String(reports));
     const b=personCal(p,"birthday"); if(b){ const d0=parseD(b.start_date); row("Birthday", MONTHS[d0.getMonth()]+" "+d0.getDate()); }
@@ -712,26 +742,38 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
   }
   $("fBM").onchange=()=>fillDays();
   function setThumb(url){ $("thumb").style.backgroundImage=url?'url("'+url.replace(/"/g,"%22")+'")':""; $("dropText").textContent=url?"Choose or drop to replace":"Choose or drop an image"; }
+  function roleRow(r){
+    const row=document.createElement("div"); row.className="rrow";
+    const dv=document.createElement("input"); dv.className="in rd"; dv.maxLength=80; dv.placeholder="Division"; dv.autocomplete="off"; dv.value=r.division||""; dv.setAttribute("aria-label","Division"); dv.setAttribute("list","divList");
+    const tt=document.createElement("input"); tt.className="in rt"; tt.maxLength=120; tt.placeholder="Position / title"; tt.autocomplete="off"; tt.value=r.title||""; tt.setAttribute("aria-label","Position or title");
+    const x=document.createElement("button"); x.type="button"; x.className="x"; x.textContent="×"; x.setAttribute("aria-label","Remove this role");
+    x.onclick=()=>{ row.remove(); if(!$("fRoles").children.length) $("fRoles").append(roleRow({})); updateAddRole(); };
+    row.append(dv,tt,x); return row;
+  }
+  function setRoles(list){ const box=$("fRoles"); box.innerHTML=""; list.slice(0,10).forEach(r=>box.append(roleRow(r))); updateAddRole(); }
+  function updateAddRole(){ $("addRole").hidden = $("fRoles").children.length>=10; }
+  function getRoles(){ return [...$("fRoles").querySelectorAll(".rrow")].map(r=>({division:r.querySelector(".rd").value.trim(), title:r.querySelector(".rt").value.trim()})).filter(r=>r.division||r.title); }
+  $("addRole").onclick=()=>{ const row=roleRow({}); $("fRoles").append(row); row.querySelector(".rd").focus(); updateAddRole(); };
   function fillBoss(p){
     const sel=$("fBoss"); sel.innerHTML="";
     sel.append(new Option("No one (top of the chart)",""));
     const blocked=new Set();
     if(p){ blocked.add(p.id); let grew=true; while(grew){ grew=false; people.forEach(x=>{ if(x.reports_to && blocked.has(x.reports_to) && !blocked.has(x.id)){ blocked.add(x.id); grew=true; } }); } }
     people.filter(x=>!blocked.has(x.id)).sort((a,b)=>a.name.localeCompare(b.name))
-      .forEach(x=>sel.append(new Option(x.name+(x.title?" — "+x.title:""), x.id)));
+      .forEach(x=>sel.append(new Option(x.name+(roleText(x)?" — "+roleText(x):""), x.id)));
     sel.value = p && p.reports_to && !blocked.has(p.reports_to) && people.some(x=>x.id===p.reports_to) ? p.reports_to : "";
   }
   function openForm(p){
     editing=p; newImage=null;
     $("dlgTitle").textContent=p?"Edit "+p.name:"Add person";
-    $("fName").value=p?p.name:""; $("fTitle").value=p?(p.title||""):"";
-    $("fFull").value=p?(p.full_name||""):""; $("fDiv").value=p?(p.division||""):""; $("fLic").checked=!!(p&&p.has_license);
-    const dl=$("divList"); dl.innerHTML=""; [...new Set(people.map(x=>x.division).filter(Boolean))].sort().forEach(d=>dl.append(new Option(d)));
+    $("fName").value=p?p.name:""; setRoles(p&&p.roles&&p.roles.length?p.roles:[{division:"",title:""}]);
+    $("fFull").value=p?(p.full_name||""):""; $("fLic").checked=!!(p&&p.has_license);
+    const dl=$("divList"); dl.innerHTML=""; [...new Set(people.flatMap(x=>(x.roles||[]).map(r=>r.division)).filter(Boolean))].sort().forEach(d=>dl.append(new Option(d)));
     const bd=p&&personCal(p,"birthday"), an=p&&personCal(p,"anniversary");
     if(bd){ const d0=parseD(bd.start_date); $("fBM").value=String(d0.getMonth()+1); fillDays(String(d0.getDate())); } else { $("fBM").value=""; fillDays(""); }
     $("fStart").value=an?String(an.start_date).slice(0,10):"";
     // fields that need a database step that hasn't been run yet
-    ["fFull","fDiv","fLic"].forEach(id=>$(id).disabled=extrasOk===false);
+    ["fFull","fLic"].forEach(id=>$(id).disabled=extrasOk===false);
     ["fBM","fBD","fStart"].forEach(id=>$(id).disabled=calOk===false);
     $("hDates").textContent = calOk===false ? "Birthdays and start dates turn on once the office calendar is set up (calendar-setup.sql)."
       : "These also feed the office calendar. On the board, the dates only show when someone opens this person.";
@@ -783,7 +825,8 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     if(/bad_image/.test(m)) return "That image couldn't be saved. Try a different JPG or PNG.";
     if(/self_report/.test(m)) return "Someone can't report to themselves. Pick a different person.";
     if(/not_found/.test(m)) return "This person was already removed by someone else.";
-    if(/save_person_extras|PGRST202/.test(m)) return "Actual name, division and driver's license need the board update. Run org-chart-upgrade.sql in Supabase.";
+    if(/wrong_password/.test(m)) return "That password isn't right.";
+    if(/save_person_extras/.test(m)) return "Actual name and driver's license need the board update. Run org-chart-upgrade.sql in Supabase.";
     if(/Failed to fetch|NetworkError|Load failed/i.test(m)) return "Couldn't reach the board. Check your internet connection and try again.";
     return m || "Something went wrong. Try again.";
   }
@@ -815,7 +858,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     $("save").disabled=true; $("save").textContent=newImage?"Uploading…":"Saving…"; $("fErr").textContent="";
     let id=editing?String(editing.id):null;
     try{
-      const ret=await api.save({ p_id:editing?editing.id:null, p_name:name, p_title:$("fTitle").value.trim(), p_companies:companies,
+      const ret=await api.save({ p_id:editing?editing.id:null, p_name:name, p_roles:getRoles(), p_companies:companies,
         p_image: keep ? null : (newImage||null), p_keep_image: !!(editing && keep), p_image_is_card:$("fCard").checked,
         p_sort: sortRaw===""||isNaN(Number(sortRaw)) ? null : Math.round(Number(sortRaw)),
         p_reports_to: $("fBoss").value || null });
@@ -824,7 +867,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     // The person is saved. Now the extra details; report anything that didn't stick.
     const problems=[];
     if(id && extrasOk!==false){
-      try{ await api.extras({ p_id:id, p_full_name:$("fFull").value.trim()||null, p_division:$("fDiv").value.trim()||null, p_has_license:$("fLic").checked }); }
+      try{ await api.extras({ p_id:id, p_full_name:$("fFull").value.trim()||null, p_has_license:$("fLic").checked }); }
       catch(e){ problems.push(friendly(e)); }
     }
     if(id && calOk!==false){
@@ -838,11 +881,14 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     const fresh=id && people.find(x=>String(x.id)===id);
     if(wasEditing && fresh) openView(fresh); else $("dlg").close();
   });
-  $("delBtn").onclick=()=>{ $("confirmDel").hidden=false; };
+  $("delBtn").onclick=()=>{ $("confirmDel").hidden=false; $("delPw").value=""; $("delPw").focus(); };
+  $("delPw").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); $("yesDel").click(); } });
   $("noDel").onclick=()=>{ $("confirmDel").hidden=true; };
   $("yesDel").onclick=async()=>{
-    if(!editing) return; $("yesDel").disabled=true;
-    try{ await api.remove(editing.id); $("dlg").close(); await refresh(true); }
+    if(!editing) return;
+    const pw=$("delPw").value; if(!pw){ $("fErr").textContent="Enter the password to remove someone."; $("delPw").focus(); return; }
+    $("yesDel").disabled=true;
+    try{ await api.remove(editing.id, pw); $("dlg").close(); await refresh(true); }
     catch(e){ $("fErr").textContent=friendly(e); }
     $("yesDel").disabled=false;
   };
@@ -858,16 +904,19 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
       if(!force && loaded){ const v=await versionAll(); if(v===lastVersion) return; lastVersion=v; }
       else { try{ lastVersion=await versionAll(); }catch(e){} }
       const [rows, calRows]=await Promise.all([api.list(), api.cal()]);
-      const all=(rows||[]).map(r=>({ id:r.id, name:String(r.name||""), title:String(r.title||""), companies:Array.isArray(r.companies)?r.companies:[],
+      const all=(rows||[]).map(r=>({ id:r.id, name:String(r.name||""),
+        roles: Array.isArray(r.roles)&&r.roles.length ? r.roles.map(x=>({division:String(x&&x.division||""), title:String(x&&x.title||"")})).filter(x=>x.division||x.title)
+          : ((r.division||r.title) ? [{division:String(r.division||""), title:String(r.title||"")}] : []),
+        title:String(r.title||""), companies:Array.isArray(r.companies)?r.companies:[],
         image:r.image||null, image_is_card:!!r.image_is_card, sort:typeof r.sort==="number"?r.sort:null, reports_to:r.reports_to||null, deleted_at:r.deleted_at||null,
-        full_name:r.full_name?String(r.full_name):null, division:r.division?String(r.division):null, has_license:!!r.has_license })).filter(p=>p.name);
+        full_name:r.full_name?String(r.full_name):null, has_license:!!r.has_license })).filter(p=>p.name);
       knownIds=new Set(all.map(p=>String(p.id)));
       cal=(calRows||[]).filter(c=>c && c.person_id!=null && c.start_date);
       people=all.filter(p=>!p.deleted_at); removed=all.filter(p=>p.deleted_at);
       $("binBtn").hidden=!removed.length; $("binBtn").textContent="Recently removed ("+removed.length+")";
       const first=!loaded; loaded=true;
       if(DEMO) note("Demo mode: changes aren't saved. Add your Supabase details at the top of index.html to go live.");
-      else if(extrasOk===false) note("One step left: run org-chart-upgrade.sql in Supabase to turn on actual names, divisions and driver's licenses.");
+      else if(extrasOk===false) note("One step left: run org-chart-upgrade.sql in Supabase to turn on actual names and driver's licenses.");
       else note("");
       if(!tv) render(); else if(first) showTV();   // TVs pick up changes on their next page turn
     }catch(e){
